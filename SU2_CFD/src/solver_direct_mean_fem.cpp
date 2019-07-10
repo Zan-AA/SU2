@@ -31,7 +31,6 @@
 
 #include "../include/solver_structure.hpp"
 #include "../include/data_manufactured_solutions.hpp"
-#include <Eigen/Eigen>
 
 #define SIZE_ARR_NORM 8
 
