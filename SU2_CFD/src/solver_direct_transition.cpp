@@ -36,6 +36,8 @@
  */
 
 #include "../include/solver_structure.hpp"
+#include "../include/variables/CTransLMVariable.hpp"
+#include "../include/variables/CTurbSAVariable.hpp"
 
 CTransLMSolver::CTransLMSolver(void) : CTurbSolver() {}
 
@@ -255,8 +257,7 @@ void CTransLMSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solv
   
   /*--- Solve or smooth the linear system ---*/
   
-  CSysSolve system;
-  system.Solve(Jacobian, LinSysRes, LinSysSol, geometry, config);
+  System.Solve(Jacobian, LinSysRes, LinSysSol, geometry, config);
   
   /*--- Update solution (system written in terms of increments) ---*/
   
@@ -266,8 +267,9 @@ void CTransLMSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solv
   }
   
   /*--- MPI solution ---*/
-  
-  Set_MPI_Solution(geometry, config);
+    
+  InitiateComms(geometry, config, SOLUTION);
+  CompleteComms(geometry, config, SOLUTION);
   
   /*--- Compute the root mean square residual ---*/
   
