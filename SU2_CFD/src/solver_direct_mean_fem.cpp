@@ -30,7 +30,7 @@
  */
 
 #include "../include/solver_structure.hpp"
-
+#include <Eigen/Eigen>
 #define SIZE_ARR_NORM 8
 
 CFEM_DG_EulerSolver::CFEM_DG_EulerSolver(void) : CSolver() {
