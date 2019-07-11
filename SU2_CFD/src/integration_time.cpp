@@ -1016,11 +1016,13 @@ void CFEM_DG_Integration::SingleGrid_Iteration(CGeometry ****geometry,
         local time stepping.  Note that we are currently hard-coding
         the classical RK4 scheme. ---*/
   bool useADER = false;
+  bool useImplicit = false;
   switch (config[iZone]->GetKind_TimeIntScheme()) {
     case RUNGE_KUTTA_EXPLICIT: iLimit = config[iZone]->GetnRKStep(); break;
     case CLASSICAL_RK4_EXPLICIT: iLimit = 4; break;
     case ADER_DG: iLimit = 1; useADER = true; break;
-    case EULER_EXPLICIT: case EULER_IMPLICIT: iLimit = 1; break; }
+    case EULER_EXPLICIT: iLimit = 1; break;
+    case EULER_IMPLICIT: iLimit = 1; useImplicit = true; break; }
 
   /*--- In case an unsteady simulation is carried out, it is possible that a
         synchronization time step is specified. If so, set the boolean
@@ -1060,6 +1062,15 @@ void CFEM_DG_Integration::SingleGrid_Iteration(CGeometry ****geometry,
       solver_container[iZone][iInst][iMesh][SolContainer_Position]->ADER_SpaceTimeIntegration(geometry[iZone][iInst][iMesh], solver_container[iZone][iInst][iMesh],
                                                                                               numerics_container[iZone][iInst][iMesh][SolContainer_Position],
                                                                                               config[iZone], iMesh, RunTime_EqSystem);
+    }
+    else if ( useImplicit ) {
+      /*--- Spatial Jacobian computation ---*/
+      solver_container[iZone][iInst][iMesh][SolContainer_Position]->ComputeSpatialJacobian(geometry[iZone][iInst][iMesh], solver_container[iZone][iInst][iMesh],
+                                                                                           numerics_container[iZone][iInst][iMesh][SolContainer_Position],
+                                                                                           config[iZone], iMesh, RunTime_EqSystem);
+      /*--- Time integration, update solution using the old solution plus the solution increment ---*/
+      Time_Integration(geometry[iZone][iInst][iMesh], solver_container[iZone][iInst][iMesh],
+                      config[iZone], iStep, RunTime_EqSystem, Iteration);
     }
     else {
 
@@ -1132,6 +1143,9 @@ void CFEM_DG_Integration::Time_Integration(CGeometry *geometry, CSolver **solver
       break;
     case (CLASSICAL_RK4_EXPLICIT):
       solver_container[MainSolver]->ClassicalRK4_Iteration(geometry, solver_container, config, iStep);
+      break;
+    case (EULER_IMPLICIT):
+      solver_container[MainSolver]->ImplicitEuler_Iteration(geometry, solver_container, config);
       break;
     default:
       SU2_MPI::Error("Time integration scheme not implemented.", CURRENT_FUNCTION);

@@ -31,6 +31,7 @@
 
 #include "../include/solver_structure.hpp"
 #include <Eigen/Eigen>
+
 #define SIZE_ARR_NORM 8
 
 CFEM_DG_EulerSolver::CFEM_DG_EulerSolver(void) : CSolver() {
@@ -697,7 +698,7 @@ CFEM_DG_EulerSolver::CFEM_DG_EulerSolver(CGeometry *geometry, CConfig *config, u
   /* Check if the exact Jacobian of the spatial discretization must be
      determined. If so, the color of each DOF must be determined, which
      is converted to the DOFs for each color. */
-  if( config->GetJacobian_Spatial_Discretization_Only() ) {
+  if( config->GetJacobian_Spatial_Discretization_Only() || config->GetKind_TimeIntScheme_Flow()==EULER_IMPLICIT ) {
 
     /* Write a message that the graph coloring is performed. */
     if(rank == MASTER_NODE)
@@ -3492,7 +3493,8 @@ void CFEM_DG_EulerSolver::ComputeSpatialJacobian(CGeometry *geometry,  CSolver *
 
   /* Allocate the memory for local part of the Jacobian. Note that passivedouble
      must be used for the Jacobian matrix. */
-  vector<passivedouble> Jacobian(nVar2*nNonZeroEntries[nDOFsLocOwned]);
+  // vector<passivedouble> Jacobian(nVar2*nNonZeroEntries[nDOFsLocOwned]);
+  SpatialJacobian.resize(nVar2*nNonZeroEntries[nDOFsLocOwned]);
 
   /* Loop over the colors and write a message, if needed. */
   for(int color=0; color<nGlobalColors; ++color) {
@@ -3530,7 +3532,7 @@ void CFEM_DG_EulerSolver::ComputeSpatialJacobian(CGeometry *geometry,  CSolver *
           /* Set the pointer to entry in Jacobian where the derivative data
              must be stored. */
           const int ind = colorToIndEntriesJacobian[i][color];
-          passivedouble *Jac = Jacobian.data() + nVar2*(nNonZeroEntries[i] + ind);
+          passivedouble *Jac = SpatialJacobian.data() + nVar2*(nNonZeroEntries[i] + ind);
 
 #ifdef CODI_FORWARD_TYPE
           /* Set the pointer to the residual of the current DOF. */
@@ -3569,52 +3571,54 @@ void CFEM_DG_EulerSolver::ComputeSpatialJacobian(CGeometry *geometry,  CSolver *
   /*---         Storage to file.                                           ---*/
   /*--------------------------------------------------------------------------*/
 
-  /* Write a message that the Jacobian is written to file. */
-  if(rank == MASTER_NODE) {
-    cout << endl;
-    cout << "Writing the Jacobian Block Compressed Row Storage." << flush;
-  }
+  if (config->GetJacobian_Spatial_Discretization_Only()) {
+    /* Write a message that the Jacobian is written to file. */
+    if(rank == MASTER_NODE) {
+      cout << endl;
+      cout << "Writing the Jacobian Block Compressed Row Storage." << flush;
+    }
 
 #ifdef HAVE_MPI
-  /* Parallel mode. The parallel IO functionality is used to Write
-     the Jacobian matrix. */
-  cout << "CFEM_DG_EulerSolver::ComputeSpatialJacobian: Not implemented yet" << endl;
-  exit(1);
+    /* Parallel mode. The parallel IO functionality is used to Write
+       the Jacobian matrix. */
+    cout << "CFEM_DG_EulerSolver::ComputeSpatialJacobian: Not implemented yet" << endl;
+    exit(1);
 
 #else
-  /* Sequential mode. The entire file is written by one rank,
-     Open the file for writing. */
-  FILE *fJac = fopen("Jacobian_DG.bin", "wb");
-  if( !fJac) {
-    cout << "Could not open the file Jacobian_DG for binary writing." << endl;
-    exit(1);
-  }
+    /* Sequential mode. The entire file is written by one rank,
+       Open the file for writing. */
+    FILE *fJac = fopen("Jacobian_DG.bin", "wb");
+    if( !fJac) {
+      cout << "Could not open the file Jacobian_DG for binary writing." << endl;
+      exit(1);
+    }
 
-  /* Write the number of DOFs (Block rows in the matrix), the number of
-     variables (the dimension of each block) and the number of neighboring
-     blocks per DOF in cumulative storage format. */
-  fwrite(&nDOFsPerRank[1], 1, sizeof(unsigned long), fJac);
-  fwrite(&nVar, 1, sizeof(unsigned short), fJac);
-  fwrite(nNonZeroEntries.data(), nNonZeroEntries.size(),
-         sizeof(unsigned long), fJac);
-
-  /* Write the block column indices of the neighboring blocks. */
-  for(unsigned long i=0; i<nDOFsLocOwned; ++i)
-    fwrite(nonZeroEntriesJacobian[i].data(), nonZeroEntriesJacobian[i].size(),
+    /* Write the number of DOFs (Block rows in the matrix), the number of
+       variables (the dimension of each block) and the number of neighboring
+       blocks per DOF in cumulative storage format. */
+    fwrite(&nDOFsPerRank[1], 1, sizeof(unsigned long), fJac);
+    fwrite(&nVar, 1, sizeof(unsigned short), fJac);
+    fwrite(nNonZeroEntries.data(), nNonZeroEntries.size(),
            sizeof(unsigned long), fJac);
 
-  /* Write the actual matrix elements. */
-  fwrite(Jacobian.data(), Jacobian.size(), sizeof(passivedouble), fJac);
+    /* Write the block column indices of the neighboring blocks. */
+    for(unsigned long i=0; i<nDOFsLocOwned; ++i)
+      fwrite(nonZeroEntriesJacobian[i].data(), nonZeroEntriesJacobian[i].size(),
+             sizeof(unsigned long), fJac);
 
-  /* Close the file again. */
-  fclose(fJac);
+    /* Write the actual matrix elements. */
+    fwrite(SpatialJacobian.data(), SpatialJacobian.size(), sizeof(passivedouble), fJac);
+
+    /* Close the file again. */
+    fclose(fJac);
 
 #endif
 
-  /* Write a message that the writing is done.. */
-  if(rank == MASTER_NODE) {
-    cout << " Done." << endl;
-    cout << endl << flush;
+    /* Write a message that the writing is done.. */
+    if(rank == MASTER_NODE) {
+      cout << " Done." << endl;
+      cout << endl << flush;
+    }
   }
 }
 
@@ -7208,6 +7212,94 @@ void CFEM_DG_EulerSolver::ExplicitRK_Iteration(CGeometry *geometry, CSolver **so
     /*--- For verification cases, compute the global error metrics. ---*/
     ComputeVerificationError(geometry, config);
   }
+}
+
+typedef Eigen::Triplet<double> T;
+void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container,
+                                               CConfig *config) {
+
+  for(unsigned short iVar=0; iVar<nVar; ++iVar) {
+    SetRes_RMS(iVar, 0.0);
+    SetRes_Max(iVar, 0.0, 0);
+  }
+
+  // /*--- Convert Jacobian into a format that is compatible with the linear solver used. ---*/
+  vector<T> tripletList;
+  std::cout << "Starting to write Jacobian into Eigen format" << std::endl;
+  unsigned int iJac = 0;
+  for (unsigned int i = 0; i < nonZeroEntriesJacobian.size(); ++i) {
+      for (unsigned int j = 0; j < nonZeroEntriesJacobian[i].size(); ++j) {
+          for (unsigned int iVar = 0; iVar<nVar*nVar; ++iVar) {
+              if (SpatialJacobian[iJac] != 0) {
+                tripletList.push_back(T(i*nVar+iVar/nVar,nonZeroEntriesJacobian[i][j]*nVar+iVar%nVar,SpatialJacobian[iJac]));
+              }
+              iJac++;
+          }
+      }
+  }
+  assert(iJac == SpatialJacobian.size());
+  std::cout << "Finished writing Jacobian into Eigen format" << std::endl;
+  Eigen::SparseMatrix<double> Jacobian_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
+  Jacobian_global.setFromTriplets(tripletList.begin(),tripletList.end());
+
+  // /*--- Convert residual into a format that is compatible with the linear solver used. ---*/
+  // Because of the incompatibility of Eigen library and CodiPack, initialization has to be 
+  // rewritten to use Eigen build-in functions later on
+  Eigen::VectorXd Res_global(VecResDOFs.size());
+  Eigen::VectorXd Sol_global(VecSolDOFs.size());
+  for (unsigned int i = 0; i < VecResDOFs.size(); ++i)
+  {
+    Res_global(i) = (double)VecResDOFs[i].getValue();
+    Sol_global(i) = (double)VecSolDOFs[i].getValue();
+  }
+  double norm0 = Res_global.norm();
+  Eigen::VectorXd Boundaryflux = Res_global - Jacobian_global*Sol_global;
+
+  // /*--- Solve the linear system using the linear solver ---*/
+  // Ax = b...
+  std::cout << "Starting the linear solver" << std::endl;
+  //insert spaND here
+  Eigen::SparseLU<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> Linear_solver;
+  Linear_solver.compute(Jacobian_global);
+  Eigen::VectorXd mSol_delta = Linear_solver.solve(-Res_global);
+  std::cout << "Finished the linear solver" << std::endl;
+  // /*--- Newton iteration with damping parameter lambda ---*/
+  double lambda = 1.0;
+  double norm_temp = (Jacobian_global*(mSol_delta*lambda+Sol_global)+Boundaryflux).norm();
+  while (norm_temp/norm0 > 1 && lambda > 1e-6)
+  {
+    lambda = lambda/2;
+    norm_temp = (Jacobian_global*(mSol_delta*lambda+Sol_global)+Boundaryflux).norm();
+  }
+  
+  /*--- update final solution ---*/
+  Sol_global += mSol_delta * lambda; 
+  // /*--- convert solution back into the SU2 solver format ---*/
+  for (unsigned int i = 0; i < VecResDOFs.size(); ++i)
+  {
+    VecSolDOFs[i] = Sol_global(i);
+  }
+
+    /*--- Update the solution by looping over the owned volume elements. ---*/
+  for(unsigned long l=0; l<nVolElemOwned; ++l) {
+
+    /* Set the pointers for the residual and solution for this element. */
+    const unsigned long offset  = nVar*volElem[l].offsetDOFsSolLocal;
+    const su2double *res        = VecResDOFs.data() + offset;
+
+    unsigned int i = 0;
+    for(unsigned short j=0; j<volElem[l].nDOFsSol; ++j) {
+      const unsigned long globalIndex = volElem[l].offsetDOFsSolGlobal + j;
+      const su2double *coor = volElem[l].coorSolDOFs.data() + j*nDim;
+
+      for(unsigned short iVar=0; iVar<nVar; ++iVar, ++i) {
+
+        AddRes_RMS(iVar, res[i]*res[i]);
+        AddRes_Max(iVar, fabs(res[i]), globalIndex, coor);
+      }
+    }
+  }
+  std::cout << "Implicit solver tested" << std::endl;
 }
 
 void CFEM_DG_EulerSolver::ClassicalRK4_Iteration(CGeometry *geometry, CSolver **solver_container,
