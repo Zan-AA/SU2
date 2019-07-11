@@ -3571,6 +3571,7 @@ void CFEM_DG_EulerSolver::ComputeSpatialJacobian(CGeometry *geometry,  CSolver *
   /*---         Storage to file.                                           ---*/
   /*--------------------------------------------------------------------------*/
 
+  /* Write the Jacobian to file when only Jacobian computation is needed. */
   if (config->GetJacobian_Spatial_Discretization_Only()) {
     /* Write a message that the Jacobian is written to file. */
     if(rank == MASTER_NODE) {
@@ -7218,12 +7219,7 @@ typedef Eigen::Triplet<double> T;
 void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container,
                                                CConfig *config) {
 
-  for(unsigned short iVar=0; iVar<nVar; ++iVar) {
-    SetRes_RMS(iVar, 0.0);
-    SetRes_Max(iVar, 0.0, 0);
-  }
-
-  // /*--- Convert Jacobian into a format that is compatible with the linear solver used. ---*/
+  /*--- Convert Jacobian into a format that is compatible with the linear solver used. ---*/
   vector<T> tripletList;
   std::cout << "Starting to write Jacobian into Eigen format" << std::endl;
   unsigned int iJac = 0;
@@ -7242,9 +7238,9 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
   Eigen::SparseMatrix<double> Jacobian_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
   Jacobian_global.setFromTriplets(tripletList.begin(),tripletList.end());
 
-  // /*--- Convert residual into a format that is compatible with the linear solver used. ---*/
-  // Because of the incompatibility of Eigen library and CodiPack, initialization has to be 
-  // rewritten to use Eigen build-in functions later on
+  /*--- Convert residual into a format that is compatible with the linear solver used. ---*/
+  /*  Because of the incompatibility of Eigen library and CodiPack, initialization has to be 
+      rewritten to use Eigen build-in functions later on. */
   Eigen::VectorXd Res_global(VecResDOFs.size());
   Eigen::VectorXd Sol_global(VecSolDOFs.size());
   for (unsigned int i = 0; i < VecResDOFs.size(); ++i)
@@ -7256,9 +7252,7 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
   Eigen::VectorXd Boundaryflux = Res_global - Jacobian_global*Sol_global;
 
   // /*--- Solve the linear system using the linear solver ---*/
-  // Ax = b...
   std::cout << "Starting the linear solver" << std::endl;
-  //insert spaND here
   Eigen::SparseLU<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> Linear_solver;
   Linear_solver.compute(Jacobian_global);
   Eigen::VectorXd mSol_delta = Linear_solver.solve(-Res_global);
@@ -7271,34 +7265,18 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
     lambda = lambda/2;
     norm_temp = (Jacobian_global*(mSol_delta*lambda+Sol_global)+Boundaryflux).norm();
   }
-  
   /*--- update final solution ---*/
-  Sol_global += mSol_delta * lambda; 
-  // /*--- convert solution back into the SU2 solver format ---*/
+  Sol_global += mSol_delta * lambda;
+
+  /*--- convert solution back into the SU2 solver format ---*/
   for (unsigned int i = 0; i < VecResDOFs.size(); ++i)
   {
     VecSolDOFs[i] = Sol_global(i);
   }
 
-    /*--- Update the solution by looping over the owned volume elements. ---*/
-  for(unsigned long l=0; l<nVolElemOwned; ++l) {
-
-    /* Set the pointers for the residual and solution for this element. */
-    const unsigned long offset  = nVar*volElem[l].offsetDOFsSolLocal;
-    const su2double *res        = VecResDOFs.data() + offset;
-
-    unsigned int i = 0;
-    for(unsigned short j=0; j<volElem[l].nDOFsSol; ++j) {
-      const unsigned long globalIndex = volElem[l].offsetDOFsSolGlobal + j;
-      const su2double *coor = volElem[l].coorSolDOFs.data() + j*nDim;
-
-      for(unsigned short iVar=0; iVar<nVar; ++iVar, ++i) {
-
-        AddRes_RMS(iVar, res[i]*res[i]);
-        AddRes_Max(iVar, fabs(res[i]), globalIndex, coor);
-      }
-    }
-  }
+  /*--- Compute the root mean square residual. Note that the SetResidual_RMS
+      function of CSolver cannot be used, because that is for the FV solver. ---*/
+  SetResidual_RMS_FEM(geometry, config);
   std::cout << "Implicit solver tested" << std::endl;
 }
 
