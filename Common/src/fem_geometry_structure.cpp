@@ -5434,6 +5434,9 @@ void CMeshFEM_DG::MetricTermsVolumeElements(CConfig *config) {
   if(config->GetUnsteady_Simulation() == STEADY ||
      config->GetUnsteady_Simulation() == ROTATIONAL_FRAME) {
     if( UseLumpedMassMatrix) LumpedMassMatrix      = true;
+    else if(config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT) {
+      FullMassMatrix = true;
+    }
     else                     FullInverseMassMatrix = true;
   }
   else if(config->GetUnsteady_Simulation() == DT_STEPPING_1ST ||

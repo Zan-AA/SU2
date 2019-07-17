@@ -2504,7 +2504,7 @@ void CFEM_DG_EulerSolver::SetUpTaskList(CConfig *config) {
     tasksList.push_back(CTaskDefinition(CTaskDefinition::BOUNDARY_CONDITIONS_DEPEND_ON_OWNED,          0,  1));               // Task 10
     tasksList.push_back(CTaskDefinition(CTaskDefinition::COMPLETE_REVERSE_MPI_COMMUNICATION,           0,  2, 8));            // Task 11
     tasksList.push_back(CTaskDefinition(CTaskDefinition::SUM_UP_RESIDUAL_CONTRIBUTIONS_OWNED_ELEMENTS, 0,  2, 6, 9, 10, 11)); // Task 12
-    tasksList.push_back(CTaskDefinition(CTaskDefinition::MULTIPLY_INVERSE_MASS_MATRIX,                 0, 12));               // Task 13
+    // tasksList.push_back(CTaskDefinition(CTaskDefinition::MULTIPLY_INVERSE_MASS_MATRIX,                 0, 12));               // Task 13
   }
 }
 
@@ -7237,6 +7237,53 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
   std::cout << "Finished writing Jacobian into Eigen format" << std::endl;
   Eigen::SparseMatrix<double> Jacobian_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
   Jacobian_global.setFromTriplets(tripletList.begin(),tripletList.end());
+
+  // Eigen::IOFormat CleanFmt(Eigen::StreamPrecision, 0, ", ", "\n", "[", "]");
+  // std::cout << Eigen::MatrixXd(Jacobian_global).block<48,12>(0,0).format(CleanFmt) << std::endl << std::endl;
+
+  // Eigen::SparseMatrix<double> MassMatrix_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
+  // vector<T> tripletList_massMatrix;
+  // for(unsigned long l=0; l<nVolElemOwned; ++l) {
+    
+  //   for (unsigned int iVar = 0; iVar<nVar*nVar; ++iVar) {
+  //     // if (SpatialJacobian[iJac] != 0) {
+  //       tripletList_massMatrix.push_back(T(volElem[l].offsetDOFsSolLocal*nVar+iVar/nVar,volElem[l].offsetDOFsSolLocal*nVar+iVar%nVar,volElem[l].massMatrix[iVar].getValue()));
+  //     // }
+  //     // iJac++;
+  //   }
+  //   // /* Easier storage of the residuals for this volume element. */
+  //   // su2double *res = VecRes.data() + nVar*volElem[l].offsetDOFsSolLocal;
+  //   // /* Check whether a multiplication must be carried out with the inverse of
+  //   //    the lumped mass matrix or the full mass matrix. Note that it is crucial
+  //   //    that the test is performed with the lumpedMassMatrix and not with
+  //   //    massMatrix. The reason is that for implicit time stepping schemes
+  //   //    both arrays may be in use. */
+  //   // if( volElem[l].lumpedMassMatrix.size() ) {
+
+  //   //   /* Multiply the residual with the inverse of the lumped mass matrix. */
+  //   //   for(unsigned short i=0; i<volElem[l].nDOFsSol; ++i) {
+
+  //   //     su2double *resDOF = res + nVar*i;
+  //   //     su2double lMInv   = 1.0/volElem[l].lumpedMassMatrix[i];
+  //   //     for(unsigned short k=0; k<nVar; ++k) resDOF[k] *= lMInv;
+  //   //   }
+  //   // }
+  //   // else {
+
+  //   //   /* Multiply the residual with the inverse of the mass matrix.
+  //   //      Use the array workArray as temporary storage. */
+  //   //   memcpy(workArray, res, nVar*volElem[l].nDOFsSol*sizeof(su2double));
+  //   //   blasFunctions->gemm(volElem[l].nDOFsSol, nVar, volElem[l].nDOFsSol,
+  //   //                       volElem[l].invMassMatrix.data(), workArray, res, config);
+  //   // }
+  // }
+  // MassMatrix_global.setFromTriplets(tripletList_massMatrix.begin(),tripletList_massMatrix.end());
+  // std::cout << "massmatrix" << std::endl;
+  // std::cout << Eigen::MatrixXd(MassMatrix_global).block<48,12>(0,0).format(CleanFmt) << std::endl << std::endl;
+  // std::cout << "inverse multiply" << std::endl;
+  // std::cout << Eigen::MatrixXd(Eigen::MatrixXd(MassMatrix_global).inverse()*Jacobian_global).block<48,12>(0,0).format(CleanFmt) << std::endl << std::endl;
+
+
 
   /*--- Convert residual into a format that is compatible with the linear solver used. ---*/
   /*  Because of the incompatibility of Eigen library and CodiPack, initialization has to be 
