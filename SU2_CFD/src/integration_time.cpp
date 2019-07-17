@@ -1073,7 +1073,7 @@ void CFEM_DG_Integration::SingleGrid_Iteration(CGeometry ****geometry,
       /*--- Time integration, update solution using the old solution plus the solution increment ---*/
       Time_Integration(geometry[iZone][iInst][iMesh], solver_container[iZone][iInst][iMesh],
                       config[iZone], iStep, RunTime_EqSystem, Iteration);
-      su2double EndTime = su2double(clock())/su2double(CLOCKS_PER_SEC)-JacobianTime;
+      su2double EndTime = su2double(clock())/su2double(CLOCKS_PER_SEC)-StartTime;
       std::cout << "Jacobian time =  " << JacobianTime << ", End Time = " << EndTime << ", Percentage of Jacobian = " << JacobianTime/EndTime*100 << std::endl;
     }
     else {
