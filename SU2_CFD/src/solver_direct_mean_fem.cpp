@@ -7221,7 +7221,7 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
 
   /*--- Convert Jacobian into a format that is compatible with the linear solver used. ---*/
   vector<T> tripletList;
-  std::cout << "Starting to write Jacobian into Eigen format" << std::endl;
+  // std::cout << "Starting to write Jacobian into Eigen format" << std::endl;
   unsigned int iJac = 0;
   for (unsigned int i = 0; i < nonZeroEntriesJacobian.size(); ++i) {
       for (unsigned int j = 0; j < nonZeroEntriesJacobian[i].size(); ++j) {
@@ -7234,32 +7234,32 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
       }
   }
   assert(iJac == SpatialJacobian.size());
-  std::cout << "Finished writing Jacobian into Eigen format" << std::endl;
+  // std::cout << "Finished writing Jacobian into Eigen format" << std::endl;
   Eigen::SparseMatrix<double> Jacobian_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
   Jacobian_global.setFromTriplets(tripletList.begin(),tripletList.end());
 
   // Eigen::IOFormat CleanFmt(Eigen::StreamPrecision, 0, ", ", "\n", "[", "]");
   // std::cout << Eigen::MatrixXd(Jacobian_global).block<48,12>(0,0).format(CleanFmt) << std::endl << std::endl;
 
-  Eigen::SparseMatrix<double> MassMatrix_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
-  vector<T> tripletList_massMatrix;
-  for(unsigned long l=0; l<nVolElemOwned; ++l) {
-    const unsigned short nDOFs  = volElem[l].nDOFsSol;
-    const unsigned short offset = volElem[l].offsetDOFsSolLocal*nVar;
-      for (unsigned int j = 0; j < nDOFs; ++j) {
-        for (unsigned int k = 0; k < nDOFs; ++k) {
-          for (unsigned int iVar = 0; iVar<nVar; ++iVar) {
-            tripletList_massMatrix.push_back(T(offset+j*nVar+iVar,
-            offset+k*nVar+iVar,
-            volElem[l].massMatrix[j*nDOFs+k].getValue()));
-          }
-        }
-      }
-  }
-  MassMatrix_global.setFromTriplets(tripletList_massMatrix.begin(),tripletList_massMatrix.end());
+  // Eigen::SparseMatrix<double> MassMatrix_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
+  // vector<T> tripletList_massMatrix;
+  // for(unsigned long l=0; l<nVolElemOwned; ++l) {
+  //   const unsigned short nDOFs  = volElem[l].nDOFsSol;
+  //   const unsigned short offset = volElem[l].offsetDOFsSolLocal*nVar;
+  //     for (unsigned int j = 0; j < nDOFs; ++j) {
+  //       for (unsigned int k = 0; k < nDOFs; ++k) {
+  //         for (unsigned int iVar = 0; iVar<nVar; ++iVar) {
+  //           tripletList_massMatrix.push_back(T(offset+j*nVar+iVar,
+  //           offset+k*nVar+iVar,
+  //           volElem[l].massMatrix[j*nDOFs+k].getValue()));
+  //         }
+  //       }
+  //     }
+  // }
+  // MassMatrix_global.setFromTriplets(tripletList_massMatrix.begin(),tripletList_massMatrix.end());
 
   /*--- CFL is hard-coded for now. No mesh/domain partition is allowed at this moment ---*/
-  su2double CFL = config->GetCFL(0);
+  // su2double CFL = config->GetCFL(0);
 
   // std::cout << "massmatrix" << std::endl;
   // std::cout << Eigen::MatrixXd(MassMatrix_global).block<48,12>(0,0).format(CleanFmt) << std::endl << std::endl;
@@ -7280,12 +7280,13 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
   Eigen::VectorXd Boundaryflux = Res_global - Jacobian_global*Sol_global;
 
   // /*--- Solve the linear system using the linear solver ---*/
-  std::cout << "Starting the linear solver" << std::endl;
+  // std::cout << "Starting the linear solver" << std::endl;
 
   Eigen::SparseLU<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> Linear_solver;
-  Linear_solver.compute(Jacobian_global + 1/Max_Delta_Time.getValue()*MassMatrix_global);
+  // Linear_solver.compute(Jacobian_global + 1/Max_Delta_Time.getValue()*MassMatrix_global);
+  Linear_solver.compute(Jacobian_global);
   Eigen::VectorXd mSol_delta = Linear_solver.solve(-Res_global);
-  std::cout << "Finished the linear solver" << std::endl;
+  // std::cout << "Finished the linear solver" << std::endl;
   // /*--- Newton iteration with damping parameter lambda ---*/
   double lambda = 1.0;
   double norm_temp = (Jacobian_global*(mSol_delta*lambda+Sol_global)+Boundaryflux).norm();
@@ -7306,7 +7307,7 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
   /*--- Compute the root mean square residual. Note that the SetResidual_RMS
       function of CSolver cannot be used, because that is for the FV solver. ---*/
   SetResidual_RMS_FEM(geometry, config);
-  std::cout << "Implicit solver tested" << std::endl;
+  // std::cout << "Implicit solver tested" << std::endl;
 }
 
 void CFEM_DG_EulerSolver::ClassicalRK4_Iteration(CGeometry *geometry, CSolver **solver_container,
