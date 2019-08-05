@@ -13173,6 +13173,8 @@ protected:
 
   vector<passivedouble> SpatialJacobian;    /*!< \brief Vector containing the Spatial Jacobian used for implicit schemes. */
 
+  vector<su2double> ResRMSinitial;       /*!< \brief Vector containing the initial RMS residuals used for implicit schemes. */
+
   int nGlobalColors;              /*!< \brief Number of global colors for the Jacobian computation. */
 
   vector<vector<unsigned long> > localDOFsPerColor;   /*!< \brief Double vector, which contains for every
