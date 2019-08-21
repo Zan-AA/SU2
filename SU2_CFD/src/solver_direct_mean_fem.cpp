@@ -7219,40 +7219,6 @@ typedef Eigen::Triplet<double> T;
 void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container,
                                                CConfig *config) {
 
-  /*--- Check Maximum Mach number in each element. ---*/
-  su2double machtemp, machMax;
-  su2double DensityInv, Velocity2, StaticEnergy, SoundSpeed2, Velocity2Rel;
-  for(unsigned long l=0; l<nVolElemOwned; ++l) {
-
-    /* Get the data from the corresponding standard element. */
-    const unsigned short ind          = volElem[l].indStandardElement;
-    const unsigned short nDOFs        = volElem[l].nDOFsSol;
-    const su2double *solDOFs = VecSolDOFs.data()
-                             + nVar*volElem[l].offsetDOFsSolLocal;
-
-    for(unsigned short iInd=0; iInd<nDOFs; ++iInd) {
-
-      const su2double *sol     = solDOFs + iInd*nVar;
-      const su2double *gridVel = volElem[l].gridVelocitiesSolDOFs.data() + iInd*nDim;
-      DensityInv = 1.0/sol[0];
-      Velocity2 = 0.0;
-      Velocity2Rel = 0.0;
-      for(unsigned short iDim=1; iDim<=nDim; ++iDim) {
-        const su2double vel    = sol[iDim]*DensityInv;
-        const su2double velRel = vel - gridVel[iDim-1];
-        Velocity2    += vel*vel;
-        Velocity2Rel += velRel*velRel;
-      }
-
-      StaticEnergy = sol[nDim+1]*DensityInv - 0.5*Velocity2;
-
-      FluidModel->SetTDState_rhoe(sol[0], StaticEnergy);
-      SoundSpeed2 = FluidModel->GetSoundSpeed2();
-      machtemp = sqrt( Velocity2Rel/SoundSpeed2 );
-      machMax = max(machtemp,machMax);
-    }
-  }
-  std::cout << "Maximum Mach number is = " <<  machMax << std::endl;
   /*--- Convert Jacobian into a format that is compatible with the linear solver used. ---*/
 
   vector<T> tripletList;
