@@ -7220,6 +7220,7 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
                                                CConfig *config) {
 
   /*--- Convert Jacobian into a format that is compatible with the linear solver used. ---*/
+
   vector<T> tripletList;
   // std::cout << "Starting to write Jacobian into Eigen format" << std::endl;
   unsigned int iJac = 0;
@@ -7241,24 +7242,8 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
   // Eigen::IOFormat CleanFmt(Eigen::StreamPrecision, 0, ", ", "\n", "[", "]");
   // std::cout << Eigen::MatrixXd(Jacobian_global).block<48,12>(0,0).format(CleanFmt) << std::endl << std::endl;
 
-  // Eigen::SparseMatrix<double> MassMatrix_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
-  // vector<T> tripletList_massMatrix;
-  // for(unsigned long l=0; l<nVolElemOwned; ++l) {
-  //   const unsigned short nDOFs  = volElem[l].nDOFsSol;
-  //   const unsigned short offset = volElem[l].offsetDOFsSolLocal*nVar;
-  //     for (unsigned int j = 0; j < nDOFs; ++j) {
-  //       for (unsigned int k = 0; k < nDOFs; ++k) {
-  //         for (unsigned int iVar = 0; iVar<nVar; ++iVar) {
-  //           tripletList_massMatrix.push_back(T(offset+j*nVar+iVar,
-  //           offset+k*nVar+iVar,
-  //           volElem[l].massMatrix[j*nDOFs+k].getValue()));
-  //         }
-  //       }
-  //     }
-  // }
-  // MassMatrix_global.setFromTriplets(tripletList_massMatrix.begin(),tripletList_massMatrix.end());
-
   /*--- CFL is hard-coded for now. No mesh/domain partition is allowed at this moment ---*/
+  
   // su2double CFL = config->GetCFL(0);
 
   // std::cout << "massmatrix" << std::endl;
@@ -7269,44 +7254,97 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
   /*--- Convert residual into a format that is compatible with the linear solver used. ---*/
   /*  Because of the incompatibility of Eigen library and CodiPack, initialization has to be 
       rewritten to use Eigen build-in functions later on. */
+
   Eigen::VectorXd Res_global(VecResDOFs.size());
   Eigen::VectorXd Sol_global(VecSolDOFs.size());
   for (unsigned int i = 0; i < VecResDOFs.size(); ++i)
   {
     Res_global(i) = (double)VecResDOFs[i].getValue();
     Sol_global(i) = (double)VecSolDOFs[i].getValue();
+    if (Res_global(i) != Res_global(i)) {
+      SU2_MPI::Error("SU2 has diverged. (NaN detected)", CURRENT_FUNCTION);
+    }
+    if (Sol_global(i) != Sol_global(i)) {
+      SU2_MPI::Error("SU2 has diverged. (NaN detected)", CURRENT_FUNCTION);
+    }
   }
   double norm0 = Res_global.norm();
-  Eigen::VectorXd Boundaryflux = Res_global - Jacobian_global*Sol_global;
+  Eigen::VectorXd Boundaryflux =  Jacobian_global*Sol_global - Res_global;
 
-  // /*--- Solve the linear system using the linear solver ---*/
+  /*--- Compute the timestep for time-stepping ---*/
+
+  // double timestep = Min_Delta_Time.getValue(); 
+  su2double ResRatio = 0;
+  if (config->GetExtIter() == 0) {
+    ResRatio = 1;
+  }
+  else {
+    for (unsigned int iVar = 0; iVar<nVar; ++iVar) {
+      ResRatio = max(ResRatio, ResRMSinitial[iVar]/GetRes_RMS(iVar));
+    }
+    ResRatio = min(ResRatio.getValue(), 1e10);
+  }
+  cout << "ResRatio = " << ResRatio << endl;
+  Eigen::SparseMatrix<double> MassMatrix_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
+  vector<T> tripletList_massMatrix;
+  for(unsigned long l=0; l<nVolElemOwned; ++l) {
+    const unsigned short nDOFs  = volElem[l].nDOFsSol;
+    const unsigned short offset = volElem[l].offsetDOFsSolLocal*nVar;
+      for (unsigned int j = 0; j < nDOFs; ++j) {
+        for (unsigned int k = 0; k < nDOFs; ++k) {
+          for (unsigned int iVar = 0; iVar<nVar; ++iVar) {
+            tripletList_massMatrix.push_back(T(offset+j*nVar+iVar,
+            offset+k*nVar+iVar,
+            (1/(ResRatio*Min_Delta_Time)*volElem[l].massMatrix[j*nDOFs+k]).getValue()));
+          }
+        }
+      }
+  }
+  MassMatrix_global.setFromTriplets(tripletList_massMatrix.begin(),tripletList_massMatrix.end());
+
+  /*--- Solve the linear system using the linear solver ---*/
+  
   // std::cout << "Starting the linear solver" << std::endl;
-
   Eigen::SparseLU<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> Linear_solver;
-  // Linear_solver.compute(Jacobian_global + 1/Max_Delta_Time.getValue()*MassMatrix_global);
-  Linear_solver.compute(Jacobian_global);
+  Linear_solver.compute(Jacobian_global + MassMatrix_global);
+  // Linear_solver.compute(Jacobian_global);
   Eigen::VectorXd mSol_delta = Linear_solver.solve(-Res_global);
   // std::cout << "Finished the linear solver" << std::endl;
-  // /*--- Newton iteration with damping parameter lambda ---*/
+  
+  /*--- Newton iteration with damping parameter lambda ---*/
+  
   double lambda = 1.0;
-  double norm_temp = (Jacobian_global*(mSol_delta*lambda+Sol_global)+Boundaryflux).norm();
+  double norm_temp = (Jacobian_global*(mSol_delta*lambda+Sol_global)-Boundaryflux+MassMatrix_global*mSol_delta).norm();
   while (norm_temp/norm0 > 1 && lambda > 1e-6)
   {
     lambda = lambda/2;
-    norm_temp = (Jacobian_global*(mSol_delta*lambda+Sol_global)+Boundaryflux).norm();
+    norm_temp = (Jacobian_global*(mSol_delta*lambda+Sol_global)-Boundaryflux+MassMatrix_global*mSol_delta).norm();
   }
-  /*--- update final solution ---*/
-  Sol_global += mSol_delta * lambda;
+  cout << "lambda = " << lambda << endl;
 
+  /*--- update final solution ---*/
+
+  Sol_global += mSol_delta * lambda;
+  Res_global += MassMatrix_global*mSol_delta;
   /*--- convert solution back into the SU2 solver format ---*/
+  
   for (unsigned int i = 0; i < VecResDOFs.size(); ++i)
   {
+    VecResDOFs[i] = Res_global(i);
     VecSolDOFs[i] = Sol_global(i);
   }
 
   /*--- Compute the root mean square residual. Note that the SetResidual_RMS
-      function of CSolver cannot be used, because that is for the FV solver. ---*/
+  function of CSolver cannot be used, because that is for the FV solver. ---*/
+  
   SetResidual_RMS_FEM(geometry, config);
+
+  if (config->GetExtIter() == 0) {
+    ResRMSinitial.resize(nVar);
+    for (unsigned int iVar = 0; iVar<nVar; ++iVar) {
+      ResRMSinitial[iVar] = GetRes_RMS(iVar);
+    }
+  }
   // std::cout << "Implicit solver tested" << std::endl;
 }
 
