@@ -236,6 +236,12 @@ inline void CBaseMPIWrapper::Scatter(void *sendbuf, int sendcnt,Datatype sendtyp
   MPI_Scatter(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
 }
 
+inline void CBaseMPIWrapper::Scatterv(void *sendbuf, int *sendcnt, int *displs, Datatype sendtype,
+                                 void *recvbuf, int recvcnt, Datatype recvtype, int root, Comm comm) {
+  MPI_Scatterv(sendbuf, sendcnt, displs, sendtype, recvbuf, recvcnt, recvtype, root, comm);
+}
+
+
 inline void CBaseMPIWrapper::Allgather(void *sendbuf, int sendcnt, Datatype sendtype,
                                    void *recvbuf, int recvcnt, Datatype recvtype, Comm comm) {
   MPI_Allgather(sendbuf,sendcnt,sendtype, recvbuf, recvcnt, recvtype, comm);
@@ -447,6 +453,11 @@ inline void CMediMPIWrapper::Scatter(void *sendbuf, int sendcnt,Datatype sendtyp
   AMPI_Scatter(sendbuf, sendcnt, convertDatatype(sendtype), recvbuf, recvcnt, convertDatatype(recvtype), root, convertComm(comm));
 }
 
+inline void CMediMPIWrapper::Scatterv(void *sendbuf, int *sendcnt, int *displs, Datatype sendtype,
+                                 void *recvbuf, int recvcnt, Datatype recvtype, int root, Comm comm) {
+  AMPI_Scatterv(sendbuf, sendcnt, displs, convertDatatype(sendtype), recvbuf, recvcnt, convertDatatype(recvtype), root, convertComm(comm));
+}
+
 inline void CMediMPIWrapper::Allgather(void *sendbuf, int sendcnt, Datatype sendtype,
                                    void *recvbuf, int recvcnt, Datatype recvtype, Comm comm) {
   AMPI_Allgather(sendbuf,sendcnt,convertDatatype(sendtype), recvbuf, recvcnt, convertDatatype(recvtype), convertComm(comm));
@@ -574,6 +585,12 @@ inline void CBaseMPIWrapper::Gather(void *sendbuf, int sendcnt, Datatype sendtyp
 }
 
 inline void CBaseMPIWrapper::Scatter(void *sendbuf, int sendcnt, Datatype sendtype,
+                    void *recvbuf, int recvcnt, Datatype recvtype, int root, Comm comm){
+  CopyData(sendbuf, recvbuf, sendcnt, sendtype);
+
+}
+
+inline void CBaseMPIWrapper::Scatterv(void *sendbuf, int *sendcnt, int *displs, Datatype sendtype,
                     void *recvbuf, int recvcnt, Datatype recvtype, int root, Comm comm){
   CopyData(sendbuf, recvbuf, sendcnt, sendtype);
 
