@@ -70,6 +70,8 @@
 #include "../../Common/include/graph_coloring_structure.hpp"
 #include "../../Common/include/toolboxes/MMS/CVerificationSolution.hpp"
 
+#include <Eigen/Sparse>
+
 using namespace std;
 
 /*!
