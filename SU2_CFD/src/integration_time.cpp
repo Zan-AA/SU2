@@ -935,8 +935,7 @@ void CFEM_DG_Integration::SingleGrid_Iteration(CGeometry ****geometry,
     case RUNGE_KUTTA_EXPLICIT: iLimit = config[iZone]->GetnRKStep(); break;
     case CLASSICAL_RK4_EXPLICIT: iLimit = 4; break;
     case ADER_DG: iLimit = 1; useADER = true; break;
-    case EULER_EXPLICIT: iLimit = 1; break;
-    case EULER_IMPLICIT: iLimit = 1; useImplicit = true; break; }
+    case EULER_EXPLICIT: case EULER_IMPLICIT: iLimit = 1; useImplicit = true; break; }
 
   /*--- In case an unsteady simulation is carried out, it is possible that a
         synchronization time step is specified. If so, set the boolean
@@ -978,13 +977,27 @@ void CFEM_DG_Integration::SingleGrid_Iteration(CGeometry ****geometry,
                                                                                               config[iZone], iMesh, RunTime_EqSystem);
     }
     else if ( useImplicit ) {
+
+      su2double StartTime, JacobianTime, EndTime;
+      if (rank == MASTER_NODE){
+        StartTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
+      }
       /*--- Spatial Jacobian computation ---*/
       solver_container[iZone][iInst][iMesh][SolContainer_Position]->ComputeSpatialJacobian(geometry[iZone][iInst][iMesh], solver_container[iZone][iInst][iMesh],
                                                                                            numerics_container[iZone][iInst][iMesh][SolContainer_Position],
                                                                                            config[iZone], iMesh, RunTime_EqSystem);
+      
+      if (rank == MASTER_NODE){
+        JacobianTime = su2double(clock())/su2double(CLOCKS_PER_SEC)-StartTime;
+      }
       /*--- Time integration, update solution using the old solution plus the solution increment ---*/
       Time_Integration(geometry[iZone][iInst][iMesh], solver_container[iZone][iInst][iMesh],
                       config[iZone], iStep, RunTime_EqSystem, Iteration);
+
+      if (rank == MASTER_NODE){
+        EndTime = su2double(clock())/su2double(CLOCKS_PER_SEC)-StartTime;
+        std::cout << "Jacobian time =  " << JacobianTime << ", End Time = " << EndTime << ", Percentage of Jacobian computation = " << JacobianTime/EndTime*100 << std::endl;
+      }
     }
     else {
 

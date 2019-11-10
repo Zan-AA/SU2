@@ -81,6 +81,8 @@
 #include "variables/CDiscAdjFEABoundVariable.hpp"
 #include "variables/CMeshElement.hpp"
 
+#include <Eigen/Sparse>
+
 using namespace std;
 
 /*!
@@ -13246,12 +13248,13 @@ protected:
 
   vector<unsigned long> nDOFsPerRank;                    /*!< \brief Number of DOFs per rank in
                                                                      cumulative storage format. */
-  
   vector<vector<unsigned long> > nonZeroEntriesJacobian; /*!< \brief The ID's of the DOFs for the
                                                                      non-zero entries of the Jacobian
                                                                      for the locally owned DOFs. */
 
   vector<passivedouble> SpatialJacobian;    /*!< \brief Vector containing the Spatial Jacobian used for implicit schemes. */
+
+  vector<su2double> ResRMSinitial;       /*!< \brief Vector containing the initial RMS residuals used for implicit schemes. */
 
   int nGlobalColors;              /*!< \brief Number of global colors for the Jacobian computation. */
 
