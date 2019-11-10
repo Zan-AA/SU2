@@ -7238,8 +7238,8 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
   Eigen::SparseMatrix<double> Jacobian_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
   Jacobian_global.setFromTriplets(tripletList.begin(),tripletList.end());
 
-  // Eigen::IOFormat CleanFmt(Eigen::StreamPrecision, 0, ", ", "\n", "[", "]");
-  // std::cout << Eigen::MatrixXd(Jacobian_global).block<48,12>(0,0).format(CleanFmt) << std::endl << std::endl;
+  Eigen::IOFormat CleanFmt(Eigen::StreamPrecision, 0, ", ", "\n", "[", "]");
+  std::cout << Eigen::MatrixXd(Jacobian_global).block<48,12>(0,0).format(CleanFmt) << std::endl << std::endl;
 
   Eigen::SparseMatrix<double> MassMatrix_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
   vector<T> tripletList_massMatrix;
