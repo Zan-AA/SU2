@@ -972,9 +972,9 @@ void CFEM_DG_Integration::SingleGrid_Iteration(CGeometry ****geometry,
           segregatedly. Therefore a different function is called for ADER to
           carry out the space and time integration. ---*/
     if( useADER ) {
-      solver_container[iZone][iInst][iMesh][SolContainer_Position]->ADER_SpaceTimeIntegration(geometry[iZone][iInst][iMesh], solver_container[iZone][iInst][iMesh],
-                                                                                              numerics_container[iZone][iInst][iMesh][SolContainer_Position],
-                                                                                              config[iZone], iMesh, RunTime_EqSystem);
+      solver_container[iZone][iInst][iMesh][SolContainer_Position]->ComputeSpatialJacobian(geometry[iZone][iInst][iMesh], solver_container[iZone][iInst][iMesh],
+                                                                                           numerics_container[iZone][iInst][iMesh][SolContainer_Position],
+                                                                                           config[iZone], iMesh, RunTime_EqSystem);
     }
     else if ( useImplicit ) {
 
@@ -992,7 +992,7 @@ void CFEM_DG_Integration::SingleGrid_Iteration(CGeometry ****geometry,
       }
       /*--- Time integration, update solution using the old solution plus the solution increment ---*/
       Time_Integration(geometry[iZone][iInst][iMesh], solver_container[iZone][iInst][iMesh],
-                      config[iZone], iStep, RunTime_EqSystem, Iteration);
+                         config[iZone], iStep, RunTime_EqSystem);
 
       if (rank == MASTER_NODE){
         EndTime = su2double(clock())/su2double(CLOCKS_PER_SEC)-StartTime;
