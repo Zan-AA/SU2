@@ -7238,8 +7238,24 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
   Eigen::SparseMatrix<double> Jacobian_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
   Jacobian_global.setFromTriplets(tripletList.begin(),tripletList.end());
 
-  Eigen::IOFormat CleanFmt(Eigen::StreamPrecision, 0, ", ", "\n", "[", "]");
-  std::cout << Eigen::MatrixXd(Jacobian_global).block<48,12>(0,0).format(CleanFmt) << std::endl << std::endl;
+
+  // FILE *fptr = fopen("Jacobian.mm", "w"); 
+  // iJac = 0;
+  // for (unsigned int i = 0; i < nonZeroEntriesJacobian.size(); ++i) {
+  //     for (unsigned int j = 0; j < nonZeroEntriesJacobian[i].size(); ++j) {
+  //         for (unsigned int iVar = 0; iVar<nVar*nVar; ++iVar) {
+  //             if (SpatialJacobian[iJac] != 0) {
+  //               fprintf(fptr, "%d\t%d\t%.10f\n", i*nVar+iVar/nVar,nonZeroEntriesJacobian[i][j]*nVar+iVar%nVar,SpatialJacobian[iJac]);
+  //             }
+  //             iJac++;
+  //         }
+  //     }
+  // }
+  // fclose(fptr); 
+
+
+  // Eigen::IOFormat CleanFmt(Eigen::StreamPrecision, 0, ", ", "\n", "[", "]");
+  // std::cout << Eigen::MatrixXd(Jacobian_global).block<48,12>(0,0).format(CleanFmt) << std::endl << std::endl;
 
   Eigen::SparseMatrix<double> MassMatrix_global(nDOFsLocTot*nVar, nDOFsLocTot*nVar);
   vector<T> tripletList_massMatrix;
@@ -7260,7 +7276,7 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
 
   /*--- CFL is hard-coded for now. No mesh/domain partition is allowed at this moment ---*/
   su2double CFL = config->GetCFL(0);
-
+  std::cout << CFL << std::endl;
   // std::cout << "massmatrix" << std::endl;
   // std::cout << Eigen::MatrixXd(MassMatrix_global).block<48,12>(0,0).format(CleanFmt) << std::endl << std::endl;
   // std::cout << "inverse multiply" << std::endl;
