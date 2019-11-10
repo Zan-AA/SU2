@@ -1064,27 +1064,17 @@ void CFEM_DG_Integration::SingleGrid_Iteration(CGeometry ****geometry,
                                                                                               config[iZone], iMesh, RunTime_EqSystem);
     }
     else if ( useImplicit ) {
-
-      su2double StartTime, JacobianTime, EndTime;
-      if (rank == MASTER_NODE){
-        StartTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
-      }
+      su2double StartTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
       /*--- Spatial Jacobian computation ---*/
       solver_container[iZone][iInst][iMesh][SolContainer_Position]->ComputeSpatialJacobian(geometry[iZone][iInst][iMesh], solver_container[iZone][iInst][iMesh],
                                                                                            numerics_container[iZone][iInst][iMesh][SolContainer_Position],
                                                                                            config[iZone], iMesh, RunTime_EqSystem);
-      
-      if (rank == MASTER_NODE){
-        JacobianTime = su2double(clock())/su2double(CLOCKS_PER_SEC)-StartTime;
-      }
+      su2double JacobianTime = su2double(clock())/su2double(CLOCKS_PER_SEC)-StartTime;
       /*--- Time integration, update solution using the old solution plus the solution increment ---*/
       Time_Integration(geometry[iZone][iInst][iMesh], solver_container[iZone][iInst][iMesh],
                       config[iZone], iStep, RunTime_EqSystem, Iteration);
-
-      if (rank == MASTER_NODE){
-        EndTime = su2double(clock())/su2double(CLOCKS_PER_SEC)-StartTime;
-        std::cout << "Jacobian time =  " << JacobianTime << ", End Time = " << EndTime << ", Percentage of Jacobian computation = " << JacobianTime/EndTime*100 << std::endl;
-      }
+      su2double EndTime = su2double(clock())/su2double(CLOCKS_PER_SEC)-StartTime;
+      std::cout << "Jacobian time =  " << JacobianTime << ", End Time = " << EndTime << ", Percentage of Jacobian = " << JacobianTime/EndTime*100 << std::endl;
     }
     else {
 
@@ -1118,7 +1108,7 @@ void CFEM_DG_Integration::SingleGrid_Iteration(CGeometry ****geometry,
 
   /*--- Convergence strategy ---*/
 
-  // Convergence_Monitoring(geometry[iZone][iInst][FinestMesh], config[iZone], Iteration, monitor, FinestMesh);
+  //Convergence_Monitoring(geometry[iZone][iInst][FinestMesh], config[iZone], Iteration, monitor, FinestMesh);
 }
 
 void CFEM_DG_Integration::Space_Integration(CGeometry *geometry,
