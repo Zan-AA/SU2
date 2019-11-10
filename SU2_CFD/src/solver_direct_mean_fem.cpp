@@ -7251,7 +7251,7 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
 
 //   // double timestep = Min_Delta_Time.getValue(); 
 //   su2double ResRatio = 0;
-//   if (config->GetExtIter() == 0) {
+//   if (config->GetTimeIter() == 0) {
 //     ResRatio = 1;
 //   }
 //   else {
@@ -7354,7 +7354,7 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
 
     // double timestep = Min_Delta_Time.getValue(); 
     su2double ResRatio = 0;
-    if (config->GetExtIter() == 0) {
+    if (config->GetTimeIter() == 0) {
       ResRatio = 1;
     }
     else {
@@ -7566,7 +7566,7 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
   
   SetResidual_RMS_FEM(geometry, config);
 
-  if (config->GetExtIter() == 0) {
+  if (config->GetTimeIter() == 0) {
     ResRMSinitial.resize(nVar);
     for (unsigned int iVar = 0; iVar<nVar; ++iVar) {
       ResRMSinitial[iVar] = GetRes_RMS(iVar);
