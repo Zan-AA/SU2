@@ -3435,8 +3435,10 @@ void CFEM_DG_EulerSolver::ComputeSpatialJacobian(CGeometry *geometry,  CSolver *
                                                  CNumerics **numerics, CConfig *config,
                                                  unsigned short iMesh, unsigned short RunTime_EqSystem) {
 
+  su2double Timer_start, Timer_end;
   /* Write a message that the Jacobian is being computed. */
   if(rank == MASTER_NODE) {
+    Timer_start = su2double(clock())/su2double(CLOCKS_PER_SEC);
     cout << endl;
     cout << "Computing the Jacobian via coloring." << endl;
     cout << endl << flush;
@@ -3592,6 +3594,13 @@ void CFEM_DG_EulerSolver::ComputeSpatialJacobian(CGeometry *geometry,  CSolver *
       cout << endl << flush;
     }
   }
+
+  if (rank == MASTER_NODE){
+    Timer_end = su2double(clock())/su2double(CLOCKS_PER_SEC);
+    Time_JACOBIAN = Timer_end-Timer_start;
+    cout << "Jacobian time = " << Timer_end-Timer_start << endl;
+  }
+
 }
 
 void CFEM_DG_EulerSolver::Set_OldSolution(CGeometry *geometry) {
@@ -7354,7 +7363,7 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
 
     // double timestep = Min_Delta_Time.getValue(); 
     su2double ResRatio = 0;
-    if (config->GetTimeIter() == 0) {
+    if (config->GetInnerIter() == 0) {
       ResRatio = 1;
     }
     else {
@@ -7370,8 +7379,9 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
     Eigen::SparseMatrix<double, Eigen::RowMajor> MassMatrix_global(nDOFsLocOwned*nVar, nDOFsGlobal*nVar);
     vector<T> tripletList_massMatrix;
     for(unsigned long l=0; l<nVolElemOwned; ++l) {
-      const unsigned short nDOFs  = volElem[l].nDOFsSol;
-      const unsigned short offset = volElem[l].offsetDOFsSolLocal*nVar;
+      const unsigned long nDOFs  = volElem[l].nDOFsSol;
+      const unsigned long offset = volElem[l].offsetDOFsSolLocal*nVar;
+      // std::cout << "l = " << l << ", nDOFs = " << nDOFs << ", offset = " << offset << std::endl;
         for (unsigned int j = 0; j < nDOFs; ++j) {
           for (unsigned int k = 0; k < nDOFs; ++k) {
             for (unsigned int iVar = 0; iVar<nVar; ++iVar) {
@@ -7384,6 +7394,7 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
     }
     MassMatrix_global.setFromTriplets(tripletList_massMatrix.begin(),tripletList_massMatrix.end());
 
+    // std::cout << "MassMatrix_global = " << MassMatrix_global.rows() << " x " << MassMatrix_global.cols() << " with nonzeros " << MassMatrix_global.nonZeros() << std::endl;
     /*--- Solve the linear system using the Eigen linear solver ---*/
     // std::string Jacobian_name;
     // Jacobian_name = "Jacobian_global_nomass" + to_string(rank) + ".mtx";
@@ -7424,11 +7435,10 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
     //   SU2_MPI::Barrier(MPI_COMM_WORLD);
     // }
 
-    int* row_index_myrank_CRS = Jacobian_global.outerIndexPtr();
-    // int* col_index_myrank_CRS = Jacobian_global.innerIndexPtr();
-    double* Jac_myrank_CRS = Jacobian_global.valuePtr();
-    // std::vector<int> row_index_myrank_CRS(Jacobian_global.outerIndexPtr(), Jacobian_global.outerIndexPtr()+nDOFsLocOwned*nVar+1);
-    std::vector<int> col_index_myrank_CRS(Jacobian_global.innerIndexPtr(), Jacobian_global.innerIndexPtr()+Jacobian_global.nonZeros());
+    // int* row_index_myrank_CRS = Jacobian_global.outerIndexPtr();
+    // // int* col_index_myrank_CRS = Jacobian_global.innerIndexPtr();
+    // double* Jac_myrank_CRS = Jacobian_global.valuePtr();
+    // std::vector<int> col_index_myrank_CRS(Jacobian_global.innerIndexPtr(), Jacobian_global.innerIndexPtr()+Jacobian_global.nonZeros());
     // std::vector<passivedouble> Jac_myrank_CRS(Jacobian_global.valuePtr(), Jacobian_global.valuePtr()+Jacobian_global.nonZeros());
     // std::cout << "size before: " << col_index_myrank_CRS.size() << std::endl;
 
@@ -7440,7 +7450,7 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
     SuperLU::LUstruct_t LUstruct;
     SuperLU::SOLVEstruct_t SOLVEstruct;
     SuperLU::gridinfo_t grid;
-    double   b[nDOFsLocOwned_acc_allranks_counts[rank]];
+    // double   b[nDOFsLocOwned_acc_allranks_counts[rank]];
     double   berr[1];
     int      info, iam;
     int      nprow, npcol;
@@ -7453,7 +7463,9 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
      // ------------------------------------------------------------
     superlu_gridinit(MPI_COMM_WORLD, nprow, npcol, &grid);
 
+    // std::cout << "before: " << options.SolveInitialized << std::endl;
     set_default_options_dist(&options);
+    // std::cout << "after: " << options.SolveInitialized << std::endl;
 
      // Initialize ScalePermstruct and LUstruct. 
     ScalePermstructInit(nDOFsGlobal*nVar, nDOFsGlobal*nVar, &ScalePermstruct);
@@ -7462,29 +7474,53 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
     /* Initialize the statistics variables. */
     PStatInit(&stat);
 
-    SuperLU::dCreate_CompRowLoc_Matrix_dist(&A, nDOFsGlobal*nVar, nDOFsGlobal*nVar, Jacobian_global.nonZeros(), 
-      nDOFsLocOwned_acc_allranks_counts[rank], nDOFsLocOwned_acc_allranks_displs[rank], Jac_myrank_CRS, &col_index_myrank_CRS[0], 
-      row_index_myrank_CRS, SuperLU::SLU_NR_loc, SuperLU::SLU_D, SuperLU::SLU_GE);
+    int nnz = Jacobian_global.nonZeros();
+
+    // SuperLU::dCreate_CompRowLoc_Matrix_dist(&A, nDOFsGlobal*nVar, nDOFsGlobal*nVar, nnz, 
+    //   nDOFsLocOwned_acc_allranks_counts[rank], nDOFsLocOwned_acc_allranks_displs[rank], Jac_myrank_CRS, &col_index_myrank_CRS.data(), 
+    //   row_index_myrank_CRS, SuperLU::SLU_NR_loc, SuperLU::SLU_D, SuperLU::SLU_GE);
+
+    SuperLU::dCreate_CompRowLoc_Matrix_dist(&A, nDOFsGlobal*nVar, nDOFsGlobal*nVar, nnz, 
+      nDOFsLocOwned_acc_allranks_counts[rank], nDOFsLocOwned_acc_allranks_displs[rank], Jacobian_global.valuePtr(), Jacobian_global.innerIndexPtr(), 
+      Jacobian_global.outerIndexPtr(), SuperLU::SLU_NR_loc, SuperLU::SLU_D, SuperLU::SLU_GE);
+
 
     // SuperLU::dPrint_CompRowLoc_Matrix_dist(&A);
 
+    Eigen::VectorXd mSol_delta(nDOFsLocOwned*nVar);
     for (unsigned long i = 0; i < nDOFsLocOwned*nVar; ++i) {
-      b[i] = -(double)Res_global(i);
+      mSol_delta(i) = -Res_global(i);
+    } 
+
+    // for (unsigned long i = 0; i < nDOFsLocOwned*nVar; ++i) {
+    //   b[i] = -(double)Res_global(i);
+    // }
+
+
+    su2double Timer_start, Timer_end;
+    if (rank == MASTER_NODE)
+    {
+      Timer_start = su2double(clock())/su2double(CLOCKS_PER_SEC);
     }
+
     // std::cout << "Starting SUPERLU" << std::endl;
-    SuperLU::pdgssvx(&options, &A, &ScalePermstruct, b, nDOFsLocOwned_acc_allranks_counts[rank], 1, &grid,
+    SuperLU::pdgssvx(&options, &A, &ScalePermstruct, mSol_delta.data(), nDOFsLocOwned_acc_allranks_counts[rank], 1, &grid,
       &LUstruct, &SOLVEstruct, berr, &stat, &info);
     // std::cout << "Finishing SUPERLU" << std::endl;
+
+    if (rank == MASTER_NODE)
+    {
+      Timer_end = su2double(clock())/su2double(CLOCKS_PER_SEC);
+      Time_LINSOL = Timer_end - Timer_start;
+    }
 
     // PStatPrint(&options, &stat, &grid);
 
     // std::cout << "berr: " << berr[0] << std::endl;
-    Eigen::VectorXd mSol_delta(nDOFsLocOwned*nVar);
-    for (unsigned long i = 0; i < nDOFsLocOwned*nVar; ++i) {
-      mSol_delta(i) = b[i];
-    } 
-
-
+    // Eigen::VectorXd mSol_delta(nDOFsLocOwned*nVar);
+    // for (unsigned long i = 0; i < nDOFsLocOwned*nVar; ++i) {
+    //   mSol_delta(i) = b[i];
+    // } 
 
     // std::string JacobianwithMassMatrixafter_name;
     // JacobianwithMassMatrixafter_name = "JacobianwithMassMatrixafter_global" + to_string(rank) + ".mtx";
@@ -7543,7 +7579,6 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
     Sol_global += mSol_delta * lambda;
     Res_global += MassMatrix_global.block(0,nDOFsLocOwned_acc_allranks_displs[rank],nDOFsLocOwned*nVar,nDOFsLocOwned*nVar)*mSol_delta * lambda;
 
-
     /*--- convert solution back into the SU2 solver format ---*/
     // for (int j = 0; j < size; j++)
     // {
@@ -7566,12 +7601,36 @@ void CFEM_DG_EulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver *
   
   SetResidual_RMS_FEM(geometry, config);
 
-  if (config->GetTimeIter() == 0) {
+  if (config->GetInnerIter() == 0) {
     ResRMSinitial.resize(nVar);
     for (unsigned int iVar = 0; iVar<nVar; ++iVar) {
       ResRMSinitial[iVar] = GetRes_RMS(iVar);
     }
   }
+
+  // std::cout << "Jacobian_global.resize(0, 0);" << std::endl;
+  // Jacobian_global.resize(0, 0);
+	std::cout << "SuperLU::PStatFree(&stat);" << std::endl;
+	SuperLU::PStatFree(&stat);
+  // std::cout << "SuperLU::Destroy_SuperMatrix_Store_dist(&A);" << std::endl;
+  // SuperLU::Destroy_SuperMatrix_Store_dist(&A);
+	// std::cout << "SuperLU::Destroy_CompRowLoc_Matrix_dist(&A);" << std::endl;
+	// SuperLU::Destroy_CompRowLoc_Matrix_dist(&A);
+	std::cout << "SuperLU::ScalePermstructFree(&ScalePermstruct);" << std::endl;
+	SuperLU::ScalePermstructFree(&ScalePermstruct);
+	std::cout << "SuperLU::Destroy_LU(nDOFsGlobal*nVar, &grid, &LUstruct);" << std::endl;
+	SuperLU::Destroy_LU(nDOFsGlobal*nVar, &grid, &LUstruct);
+	std::cout << "SuperLU::LUstructFree(&LUstruct);" << std::endl;
+	SuperLU::LUstructFree(&LUstruct);
+	// std::cout << "SuperLU::SUPERLU_FREE(b);" << std::endl;
+	// SuperLU::SUPERLU_FREE(b);
+	// std::cout << "SuperLU::SUPERLU_FREE(berr);" << std::endl;
+	// SuperLU::SUPERLU_FREE(berr);
+  if ( options.SolveInitialized ) {
+        dSolveFinalize(&options, &SOLVEstruct);
+  }
+	std::cout << "SuperLU::superlu_gridexit(&grid);" << std::endl;
+	SuperLU::superlu_gridexit(&grid);
 }
 
 void CFEM_DG_EulerSolver::SetResidual_RMS_FEM(CGeometry *geometry,
