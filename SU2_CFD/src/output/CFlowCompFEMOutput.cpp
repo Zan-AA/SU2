@@ -119,14 +119,11 @@ void CFlowCompFEMOutput::SetHistoryOutputFields(CConfig *config){
   AddHistoryOutput("LINSOL_ITER", "Linear_Solver_Iterations", ScreenOutputFormat::INTEGER, "LINSOL_ITER", "Number of iterations of the linear solver.");
 
   AddHistoryOutput("CFL_NUMBER", "CFL number", ScreenOutputFormat::SCIENTIFIC, "CFL_NUMBER", "Current value of the CFL number");
-<<<<<<< HEAD
  
   AddHistoryOutput("TIME_JACOBIAN", "Jacobian time", ScreenOutputFormat::FIXED, "TIME_JACOBIAN", "Current value of the CFL number");
 
   AddHistoryOutput("TIME_LINSOL", "Linear solver time", ScreenOutputFormat::FIXED, "TIME_LINSOL", "Current value of the CFL number");
-=======
 
->>>>>>> f80bbab2cd4018e01077a323aaf856f21ac30421
   /*--- Add analyze surface history fields --- */
 
   AddAnalyzeSurfaceOutput(config);
@@ -272,13 +269,9 @@ void CFlowCompFEMOutput::LoadHistoryData(CConfig *config, CGeometry *geometry, C
   SetHistoryOutputValue("AOA", config->GetAoA());
   SetHistoryOutputValue("LINSOL_ITER", flow_solver->GetIterLinSolver());
   SetHistoryOutputValue("CFL_NUMBER", config->GetCFL(MESH_0));
-<<<<<<< HEAD
   SetHistoryOutputValue("TIME_JACOBIAN", flow_solver->Time_JACOBIAN);
   SetHistoryOutputValue("TIME_LINSOL", flow_solver->Time_LINSOL);
   
-=======
-
->>>>>>> f80bbab2cd4018e01077a323aaf856f21ac30421
   /*--- Set the analyse surface history values --- */
 
   SetAnalyzeSurface(flow_solver, geometry, config, false);
