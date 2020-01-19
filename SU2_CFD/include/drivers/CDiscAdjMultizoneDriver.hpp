@@ -2,14 +2,24 @@
  * \class CDiscAdjMultizoneDriver.hpp
  * \brief Class for driving adjoint multi-zone problems.
  * \author O. Burghardt, T. Albring, R. Sanchez
- * \version 7.0.0 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
- * SU2 Project Website: https://su2code.github.io
+ * The current SU2 release has been coordinated by the
+ * SU2 International Developers Society <www.su2devsociety.org>
+ * with selected contributions from the open-source community.
  *
- * The SU2 Project is maintained by the SU2 Foundation 
- * (http://su2foundation.org)
+ * The main research teams contributing to the current release are:
+ *  - Prof. Juan J. Alonso's group at Stanford University.
+ *  - Prof. Piero Colonna's group at Delft University of Technology.
+ *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *  - Prof. Rafael Palacios' group at Imperial College London.
+ *  - Prof. Vincent Terrapon's group at the University of Liege.
+ *  - Prof. Edwin van der Weide's group at the University of Twente.
+ *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
  *
- * Copyright 2012-2019, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2019, Francisco D. Palacios, Thomas D. Economon,
+ *                      Tim Albring, and the SU2 contributors.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -64,18 +74,11 @@ protected:
   su2double ObjFunc;              /*!< \brief Value of the objective function. */
   int ObjFunc_Index;              /*!< \brief Index of the value of the objective function. */
 
-  CIteration*** direct_iteration;       /*!< \brief Array of pointers to the direct iterations. */
-  COutput** direct_output;              /*!< \brief Array of pointers to the direct outputs. */
-  vector<unsigned short> direct_nInst;  /*!< \brief Total number of instances in the direct problem. */
-  vector<unsigned long> nInnerIter;     /*!< \brief Number of inner iterations for each zone. */
+  CIteration*** direct_iteration; /*!< \brief Array of pointers to the direct iterations. */
+  COutput** direct_output;        /*!< \brief Array of pointers to the direct outputs. */
+  unsigned short* direct_nInst;   /*!< \brief Total number of instances in the direct problem. */
+  unsigned short* nInnerIter;     /*!< \brief Number of inner iterations for each zone. */
 
-  su2vector<bool> Has_Deformation;  /*!< \brief True if iZone has mesh deformation (used for
-                                                lazy evaluation of TRANSFER tape section). */
-
-  /*!< \brief Individual cross-terms of the coupled problem, 5D array [iZone][jZone][iSol](iPoint,iVar).
-              The column sum, i.e. along all iZones for each jZone, gives the External (total cross-term)
-              for jZone, we need to store all terms to have BGS-type updates with relaxation. */
-  vector<vector<vector<su2passivematrix> > > Cross_Terms;
 
 public:
 
@@ -99,48 +102,29 @@ public:
    */
   void StartSolver() override;
 
-protected:
-
   /*!
    * \brief [Overload] Run an discrete adjoint update of all solvers within multiple zones.
    */
   void Run() override;
 
   /*!
-   * \brief Evaluate sensitivites for the current adjoint solution and output files.
-   * \param[in] iOuterIter - Current outer iteration.
-   * \param[in] StopCalc - Final iteration flag (converged or reached max number of iters).
-   */
-  void EvaluateSensitivities(unsigned long iOuterIter, bool StopCalc);
-
-  /*!
-   * \brief Setup the matrix of cross-terms.
-   */
-  void InitializeCrossTerms();
-
-  /*!
-   * \brief Record one iteration of the primal problem within each zone.
-   * \param[in] kind_recording - Kind of variables with respect to which we are recording.
-   * \param[in] tape_type - indicator which part of a solution update will be recorded.
-   * \param[in] record_zone - zone where solution update will be recorded.
+   * \brief Record one iteration of a flow iteration in within multiple zones.
+   * \param[in] kind_recording - Kind of variables with regard to which we are recording.
+   * \param[in] tape_type - indicator which part of a solution update will be recorded
+   * \param[in] record_zone - zone where solution update will be recorded
    */
   void SetRecording(unsigned short kind_recording, Kind_Tape tape_type, unsigned short record_zone);
 
   /*!
-   * \brief Transfer data between zones and update grids when required.
-   */
-  void HandleDataTransfer();
-
-  /*!
    * \brief Run one direct iteration in a zone.
    * \param[in] iZone - Zone in which we run an iteration.
-   * \param[in] kind_recording - Kind of variables with respect to which we are recording.
+   * \param[in] kind_recording - Kind of variables with regard to which we are recording.
    */
   void DirectIteration(unsigned short iZone, unsigned short kind_recording);
 
   /*!
    * \brief Set the objective function.
-   * \param[in] kind_recording - Kind of variables with respect to which we are recording.
+   * \param[in] kind_recording - Kind of variables with regard to which we are recording.
    */
   void SetObjFunction(unsigned short kind_recording);
 
@@ -152,44 +136,40 @@ protected:
   /*!
    * \brief Summary of all routines to evaluate the adjoints in iZone.
    * \param[in] iZone - Zone in which adjoints are evaluated depending on their (preceding) seeding.
-   * \param[in] eval_transfer - Evaluate adjoints of transfer and mesh deformation routines.
    */
-  void ComputeAdjoints(unsigned short iZone, bool eval_transfer = true);
+  void ComputeAdjoints(unsigned short iZone);
 
   /*!
-   * \brief Puts BGSSolution_k back into Solution.
-   * \param[in] iZone - Zone index.
+   * \brief Add External_Old vector to Solution.
+   * \param[in] iZone - Zone where data between solvers is transferred.
    */
-  void Set_Solution_To_BGSSolution_k(unsigned short iZone);
+  void Add_ExternalOld_To_Solution(unsigned short iZone);
 
   /*!
-   * \brief Puts Solution into BGSSolution_k.
-   * \param[in] iZone - Zone index.
+   * \brief Sets External to zero.
    */
-  void Set_BGSSolution_k_To_Solution(unsigned short iZone);
+  void SetExternal_Zero(void);
+
+  /*!
+   * \brief Set External_Old to External.
+   */
+  void Set_OldExternal(void);
 
   /*!
    * \brief Add Solution vector to External.
-   * \param[in] iZone - Zone index.
+   * \param[in] iZone - Zone where data between solvers is transferred.
    */
   void Add_Solution_To_External(unsigned short iZone);
 
   /*!
-   * \brief Add External_Old vector to Solution.
-   * \param[in] iZone - Zone index.
+   * \brief Add Solution vector to External_Old.
+   * \param[in] iZone - Zone where data between solvers is transferred.
    */
-  void Add_External_To_Solution(unsigned short iZone);
-
-  /*!
-   * \brief Extract contribution of iZone to jZone with BGS relaxation.
-   * \param[in] iZone - Source zone (the one that was initialized).
-   * \param[in] jZone - Target zone (the one that transfers to iZone in the primal problem).
-   */
-  void Update_Cross_Term(unsigned short iZone, unsigned short jZone);
+  void Add_Solution_To_ExternalOld(unsigned short iZone);
 
   /*!
    * \brief Saves the current (adjoint) Solution vector to Solution_BGS_k.
-   * \param[in] iZone - Zone index.
+   * \param[in] iZone - Zone where data between solvers is transferred.
    */
   void Set_BGSSolution(unsigned short iZone);
 

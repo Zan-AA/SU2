@@ -1,10 +1,8 @@
 su2_sol_src = ['SU2_SOL.cpp']
 if get_option('enable-normal')
   su2_cfd_obj = su2_cfd.extract_objects(['solver_structure.cpp',
-                                        'CMarkerProfileReaderFVM.cpp',
                                         'output/COutput.cpp',
                                         'output/output_structure_legacy.cpp',
-					'output/tools/CWindowingTools.cpp',
                                         'output/CBaselineOutput.cpp',
                                         'output/filewriter/CParallelDataSorter.cpp',
                                         'output/filewriter/CParallelFileWriter.cpp',

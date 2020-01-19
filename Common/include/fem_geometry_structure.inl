@@ -2,14 +2,18 @@
  * \file fem_geometry_structure.inl
  * \brief In-Line subroutines of the <i>fem_geometry_structure.hpp</i> file.
  * \author E. van der Weide
- * \version 7.0.0 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
- * SU2 Project Website: https://su2code.github.io
+ * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
+ *                      Dr. Thomas D. Economon (economon@stanford.edu).
  *
- * The SU2 Project is maintained by the SU2 Foundation 
- * (http://su2foundation.org)
+ * SU2 Developers: Prof. Juan J. Alonso's group at Stanford University.
+ *                 Prof. Piero Colonna's group at Delft University of Technology.
+ *                 Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *                 Prof. Rafael Palacios' group at Imperial College London.
  *
- * Copyright 2012-2019, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright (C) 2012-2015 SU2, the open-source CFD code.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -144,6 +148,10 @@ inline CMeshFEM_DG::CMeshFEM_DG(void) : CMeshFEM() { }
 
 inline CMeshFEM_DG::~CMeshFEM_DG(void) { }
 
+inline void CMeshFEM_DG::SetGlobal_nPointDomain(unsigned long val_global_npoint) { Global_nPointDomain =  val_global_npoint; }
+
+inline unsigned long CMeshFEM_DG::GetGlobal_nPointDomain(void) { return Global_nPointDomain; }
+
 inline void CMeshFEM_DG::SetGlobal_to_Local_Point(void) {
   Global_to_Local_Point.clear();
   unsigned long ii = 0;
@@ -154,11 +162,13 @@ inline void CMeshFEM_DG::SetGlobal_to_Local_Point(void) {
   }
 }
 
-inline long CMeshFEM_DG::GetGlobal_to_Local_Point(unsigned long val_ipoint) const {
-  auto it = Global_to_Local_Point.find(val_ipoint);
-  if (it != Global_to_Local_Point.cend())
-    return it->second;
-  return -1;
+inline long CMeshFEM_DG::GetGlobal_to_Local_Point(unsigned long val_ipoint) {
+  map<unsigned long, unsigned long>::const_iterator MI = Global_to_Local_Point.find(val_ipoint);
+  if (MI != Global_to_Local_Point.end()) {
+    return Global_to_Local_Point[val_ipoint];
+  } else {
+    return -1;
+  }
 }
 
 inline su2double* CMeshFEM_DG::GetTimeCoefADER_DG(void) {return timeCoefADER_DG.data();}

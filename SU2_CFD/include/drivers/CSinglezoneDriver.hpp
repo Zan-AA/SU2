@@ -3,14 +3,24 @@
  * \brief Headers of the main subroutines for driving single or multi-zone problems.
  *        The subroutines and functions are in the <i>driver_structure.cpp</i> file.
  * \author T. Economon, H. Kline, R. Sanchez
- * \version 7.0.0 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
- * SU2 Project Website: https://su2code.github.io
+ * The current SU2 release has been coordinated by the
+ * SU2 International Developers Society <www.su2devsociety.org>
+ * with selected contributions from the open-source community.
  *
- * The SU2 Project is maintained by the SU2 Foundation 
- * (http://su2foundation.org)
+ * The main research teams contributing to the current release are:
+ *  - Prof. Juan J. Alonso's group at Stanford University.
+ *  - Prof. Piero Colonna's group at Delft University of Technology.
+ *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *  - Prof. Rafael Palacios' group at Imperial College London.
+ *  - Prof. Vincent Terrapon's group at the University of Liege.
+ *  - Prof. Edwin van der Weide's group at the University of Twente.
+ *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
  *
- * Copyright 2012-2019, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2019, Francisco D. Palacios, Thomas D. Economon,
+ *                      Tim Albring, and the SU2 contributors.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,7 +43,7 @@
  * \class CSinglezoneDriver
  * \brief Class for driving single-zone solvers.
  * \author R. Sanchez
- * \version 7.0.0 "Blackbird"
+ * \version 6.0.1 "Falcon"
  */
 class CSinglezoneDriver : public CDriver {
 protected:
@@ -97,16 +107,7 @@ public:
    * \param ExtIter
    */
   virtual bool Monitor(unsigned long TimeIter);
-
-  /*!
-     * \brief  Returns wheter all specified windowed-time-averaged ouputs have been converged
-     * \return Boolean indicating whether the problem is converged.
-     */
-  inline virtual bool GetTimeConvergence() const{
-    return output_container[ZONE_0]->GetTimeConvergence();
-  }
-
-
+  
   /*!
    * \brief Runtime_Parsing
    */

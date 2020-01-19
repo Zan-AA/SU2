@@ -3,20 +3,30 @@
 ## \file gradients.py
 #  \brief python package for gradients
 #  \author T. Lukaczyk, F. Palacios
-#  \version 7.0.0 "Blackbird"
+#  \version 6.2.0 "Falcon"
 #
-# SU2 Project Website: https://su2code.github.io
-# 
-# The SU2 Project is maintained by the SU2 Foundation 
-# (http://su2foundation.org)
+# The current SU2 release has been coordinated by the
+# SU2 International Developers Society <www.su2devsociety.org>
+# with selected contributions from the open-source community.
 #
-# Copyright 2012-2019, SU2 Contributors (cf. AUTHORS.md)
+# The main research teams contributing to the current release are:
+#  - Prof. Juan J. Alonso's group at Stanford University.
+#  - Prof. Piero Colonna's group at Delft University of Technology.
+#  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+#  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+#  - Prof. Rafael Palacios' group at Imperial College London.
+#  - Prof. Vincent Terrapon's group at the University of Liege.
+#  - Prof. Edwin van der Weide's group at the University of Twente.
+#  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
+#
+# Copyright 2012-2019, Francisco D. Palacios, Thomas D. Economon,
+#                      Tim Albring, and the SU2 contributors.
 #
 # SU2 is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
 # version 2.1 of the License, or (at your option) any later version.
-# 
+#
 # SU2 is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -221,28 +231,19 @@ def adjoint( func_name, config, state=None ):
     #  Adjoint Solution
     # ----------------------------------------------------        
 
-    konfig = copy.deepcopy(config)
-
-    # Set correct starting time for reverse sweep
-    if 'TIME_ITER' in state.WND_CAUCHY_DATA:  # Use Convergence data, if we have already a direct run
-        konfig['TIME_ITER'] = state.WND_CAUCHY_DATA['TIME_ITER']
-        konfig['ITER_AVERAGE_OBJ'] = state.WND_CAUCHY_DATA['ITER_AVERAGE_OBJ']
-        konfig['UNST_ADJOINT_ITER'] = state.WND_CAUCHY_DATA['UNST_ADJOINT_ITER']
-
-
     # files to pull
     files = state['FILES']
-    pull = []; link = []
+    pull = []; link = []    
 
     # files: mesh
     name = files['MESH']
-    name = su2io.expand_part(name,konfig)
+    name = su2io.expand_part(name,config)
     link.extend(name)
 
     # files: direct solution
     name = files['DIRECT']
-    name = su2io.expand_zones(name,konfig)
-    name = su2io.expand_time(name,konfig)
+    name = su2io.expand_zones(name,config)
+    name = su2io.expand_time(name,config)
     link.extend(name)
     
     if 'FLOW_META' in files:
@@ -251,12 +252,11 @@ def adjoint( func_name, config, state=None ):
     # files: adjoint solution
     if ADJ_NAME in files:
         name = files[ADJ_NAME]
-        name = su2io.expand_zones(name,konfig)
-        name = su2io.expand_time(name,konfig)
+        name = su2io.expand_zones(name,config)
+        name = su2io.expand_time(name,config)
         link.extend(name)       
     else:
-        config['RESTART_SOL'] = 'NO' #Can this be deleted?
-        konfig['RESTART_SOL'] = 'NO'
+        config['RESTART_SOL'] = 'NO'
 
     # files: target equivarea adjoint weights
     if 'EQUIV_AREA' in special_cases:
@@ -284,25 +284,23 @@ def adjoint( func_name, config, state=None ):
 
             # Format objective list in config
             if multi_objective:
-                config['OBJECTIVE_FUNCTION'] = ", ".join(func_name) #Can this be deleted?
-                konfig['OBJECTIVE_FUNCTION'] = ", ".join(func_name)
+                config['OBJECTIVE_FUNCTION'] = ", ".join(func_name)
             else:
-                config['OBJECTIVE_FUNCTION'] = func_name            #Can this be deleted?
-                konfig['OBJECTIVE_FUNCTION'] = func_name
+                config['OBJECTIVE_FUNCTION'] = func_name
 
             # # RUN ADJOINT SOLUTION # #
-            info = su2run.adjoint(konfig)
-            su2io.restart2solution(konfig,info)
+            info = su2run.adjoint(config)
+            su2io.restart2solution(config,info)
             state.update(info)
 
             # Gradient Projection
-            info = su2run.projection(konfig,state)
+            info = su2run.projection(config,state)
             state.update(info)
 
             # solution files to push
             name = state.FILES[ADJ_NAME]
-            name = su2io.expand_zones(name,konfig)
-            name = su2io.expand_time(name,konfig)
+            name = su2io.expand_zones(name,config)
+            name = su2io.expand_time(name,config)
             push.extend(name)
 
     #: with output redirection
