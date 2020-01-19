@@ -2,10 +2,6 @@
 	path = externals/codi
 	url = https://github.com/scicompkl/CoDiPack
 	ignore = dirty
-[submodule "externals/medi"]
-	path = externals/medi
-	url = https://github.com/SciCompKL/MeDiPack
-	ignore = dirty
 [submodule "externals/ninja"]
 	path = externals/ninja
 	url = https://github.com/ninja-build/ninja
