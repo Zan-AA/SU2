@@ -1,8 +1,8 @@
 /*!
  * \file CDiscAdjFEAVariable.cpp
  * \brief Definition of the variables for FEM adjoint elastic structural problems.
- * \author Ruben Sanchez
- * \version 6.2.0 "Falcon"
+ * \author R. Sanchez
+ * \version 7.0.1 "Blackbird"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>

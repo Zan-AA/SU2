@@ -2,7 +2,7 @@
  * \file output_structure.inl
  * \brief In-Line subroutines of the <i>output.hpp</i> file.
  * \author J. Smith
- * \version 6.1.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>

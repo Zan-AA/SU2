@@ -1,22 +1,15 @@
 /*!
- * \file CCSVFileWriter.hpp
+ * \file CSU2MeshFileWriter.hpp
  * \brief Headers fo the CSV file writer class.
  * \author T. Albring
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
  * with selected contributions from the open-source community.
  *
- * The main research teams contributing to the current release are:
- *  - Prof. Juan J. Alonso's group at Stanford University.
- *  - Prof. Piero Colonna's group at Delft University of Technology.
- *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
- *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
- *  - Prof. Rafael Palacios' group at Imperial College London.
- *  - Prof. Vincent Terrapon's group at the University of Liege.
- *  - Prof. Edwin van der Weide's group at the University of Twente.
- *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
+ * The SU2 Project is maintained by the SU2 Foundation
+ * (http://su2foundation.org)
  *
  * Copyright 2012-2019, Francisco D. Palacios, Thomas D. Economon,
  *                      Tim Albring, and the SU2 contributors.
@@ -51,18 +44,15 @@ public:
   const static string fileExt;
   
   /*!
-   * \brief Construct a file writer using field names, file extension and dimension.
-   * \param[in] fields - A list of field names
-   * \param[in] nDim - Physical dimension
-   * \param[in] fileName - The name of the file
-   * \param[in] data_sorter - The parallel sorted data to write
-   * \param[in] iZone - Index of the current zone
-   * \param[in] nZone - Number of zones
-   */  
-  CSU2MeshFileWriter(vector<string> fields, unsigned short nDim, 
-                     string fileName, CParallelDataSorter* data_sorter,
-                     unsigned short iZone, unsigned short nZone);
-  
+   * \brief Construct a file writer using field names, dimension.
+   * \param[in] valFileName - The name of the file
+   * \param[in] valDataSorter - The parallel sorted data to write
+   * \param[in] valiZone - The index of the current zone
+   * \param[in] valnZone - The total number of zones
+   */
+  CSU2MeshFileWriter(string valFileName, CParallelDataSorter* valDataSorter,
+                     unsigned short valiZone, unsigned short valnZone);
+
   /*!
    * \brief Destructor
    */

@@ -1,6 +1,9 @@
------------------------------------------------------------
-  SU2 (ver. 6.2.0 "Falcon"): The Open-Source CFD Code
------------------------------------------------------------
+<p align="center">
+<img width="250" height="154" src="Common/doc/logoSU2small.png">
+</p>
+
+
+# SU2 (ver. 7.0.1 "Blackbird"): The Open-Source CFD Code
 
 Computational analysis tools have revolutionized the way we design engineering systems, but most established codes are proprietary, unavailable, or prohibitively expensive for many users. The SU2 team is changing this, making multiphysics analysis and design optimization freely available as open-source software and involving everyone in its creation and development. 
 

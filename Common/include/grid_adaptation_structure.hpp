@@ -3,7 +3,7 @@
  * \brief Headers of the main subroutines for doing the numerical grid
  *        adaptation.
  * \author F. Palacios
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -45,8 +45,8 @@
 #include <cstdlib>
 #include <fstream>
 
-#include "geometry_structure.hpp"
-#include "config_structure.hpp"
+#include "geometry/CPhysicalGeometry.hpp"
+#include "CConfig.hpp"
 
 using namespace std;
 

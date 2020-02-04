@@ -2,21 +2,14 @@
  * \file COutput.hpp
  * \brief Headers of the output class.
  * \author T.Albring
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
  * with selected contributions from the open-source community.
  *
- * The main research teams contributing to the current release are:
- *  - Prof. Juan J. Alonso's group at Stanford University.
- *  - Prof. Piero Colonna's group at Delft University of Technology.
- *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
- *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
- *  - Prof. Rafael Palacios' group at Imperial College London.
- *  - Prof. Vincent Terrapon's group at the University of Liege.
- *  - Prof. Edwin van der Weide's group at the University of Twente.
- *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
+ * The SU2 Project is maintained by the SU2 Foundation
+ * (http://su2foundation.org)
  *
  * Copyright 2012-2019, Francisco D. Palacios, Thomas D. Economon,
  *                      Tim Albring, and the SU2 contributors.
@@ -235,13 +228,25 @@ protected:
   newFunc;                       /*!< \brief Current value of the coefficient. */
   bool convergence;              /*!< \brief To indicate if the solver has converged or not. */
   su2double initResidual;        /*!< \brief Initial value of the residual to evaluate the convergence level. */
-  vector<string> convFields;      /*!< \brief Name of the field to be monitored for convergence */
-  
-  /*----------------------------- Adaptive CFL ----------------------------*/     
-  
-  su2double rhoResNew,    /*!< New value of the residual for adaptive CFL routine */
-  rhoResOld;              /*!< Old value of the residual for adaptive CFL routine */
-  
+  vector<string> convFields;     /*!< \brief Name of the field to be monitored for convergence. */
+
+  /*----------------------------- Adaptive CFL ----------------------------*/
+
+  su2double rhoResNew,    /*!< New value of the residual for adaptive CFL routine. */
+  rhoResOld;              /*!< Old value of the residual for adaptive CFL routine. */
+
+  /*----------------------------- Time Convergence monitoring ----------------------------*/
+  vector<string> wndConvFields;                /*!< \brief Name of the field to be monitored for convergence. */
+  vector<vector<su2double> > WndCauchy_Serie;  /*!< \brief Complete Cauchy serial. */
+  unsigned long nWndCauchy_Elems;              /*!< \brief Total number of cauchy elems to monitor */
+  su2double wndCauchyEps;                      /*!< \brief Defines the threshold when to stop the solver. */
+
+  vector<su2double> WndOld_Func;  /*!< \brief Old value of the objective function (the function which is monitored). */
+  vector<su2double> WndNew_Func;  /*!< \brief Current value of the objective function (the function which is monitored). */
+  su2double WndCauchy_Func;       /*!< \brief Current value of the convergence indicator at one iteration. */
+  su2double WndCauchy_Value;      /*!< \brief Summed value of the convergence indicator. */
+  bool TimeConvergence;   /*!< \brief To indicate, if the windowed time average of the time loop has converged*/
+
 public:
   
   /*----------------------------- Public member functions ----------------------------*/
@@ -376,11 +381,11 @@ public:
    * \return Value of the field
    */
   su2double GetHistoryFieldValue(string field){
-    return historyOutput_Map[field].value;
+    return historyOutput_Map.at(field).value;
   }
 
   su2double GetHistoryFieldValuePerSurface(string field, unsigned short iMarker){
-    return historyOutputPerSurface_Map[field][iMarker].value;
+    return historyOutputPerSurface_Map.at(field)[iMarker].value;
   }
   
   /*!
@@ -389,9 +394,9 @@ public:
    * \return Vector containing all output fields of a group 
    */
   vector<HistoryOutputField> GetHistoryGroup(string groupname){
-    vector<HistoryOutputField> HistoryGroup;  
-    for (unsigned short iField = 0; iField < historyOutput_Map.size(); iField++){   
-      if (historyOutput_Map[historyOutput_List[iField]].outputGroup == groupname){
+    vector<HistoryOutputField> HistoryGroup;
+    for (unsigned short iField = 0; iField < historyOutput_Map.size(); iField++){
+      if (historyOutput_Map.at(historyOutput_List[iField]).outputGroup == groupname){
         HistoryGroup.push_back((historyOutput_Map[historyOutput_List[iField]]));
       }
     }

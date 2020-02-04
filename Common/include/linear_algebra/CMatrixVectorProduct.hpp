@@ -3,7 +3,7 @@
  * \brief Headers for the classes related to sparse matrix-vector product wrappers.
  *        The actual operations are currently implemented mostly by CSysMatrix.
  * \author F. Palacios, J. Hicken, T. Economon
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -38,8 +38,8 @@
 
 #pragma once
 
-#include "../config_structure.hpp"
-#include "../geometry_structure.hpp"
+#include "../CConfig.hpp"
+#include "../geometry/CGeometry.hpp"
 #include "CSysVector.hpp"
 #include "CSysMatrix.hpp"
 

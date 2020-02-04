@@ -2,7 +2,7 @@
  * \file wall_model.hpp
  * \brief Headers for the wall model functions for large eddy simulations.
  * \author E. van der Weide, T. Economon, P. Urbanczyk
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
  *                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -34,7 +34,7 @@
 #pragma once
 
 #include "./mpi_structure.hpp"
-#include "./config_structure.hpp"
+#include "./CConfig.hpp"
 
 #include <iostream>
 #include <cmath>
@@ -48,7 +48,7 @@ class CFluidModel;
  * \class CWallModel
  * \brief Base class for defining the LES wall model.
  * \author: E. van der Weide, T. Economon, P. Urbanczyk
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  */
 class CWallModel {
 

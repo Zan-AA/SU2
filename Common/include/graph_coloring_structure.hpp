@@ -4,7 +4,7 @@
  *        coloring of a given graph. The functions are in the
  *        <i>graph_coloring_structure.cpp</i> file.
  * \author E. van der Weide
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
  *                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -35,7 +35,7 @@
 
 #include "./mpi_structure.hpp"
 #include "option_structure.hpp"
-#include "config_structure.hpp"
+#include "CConfig.hpp"
 #include <cstring>
 
 using namespace std;
@@ -44,7 +44,7 @@ using namespace std;
  * \class CGraphColoringStructure
  * \brief Class, which provides graph coloring algorithms.
  * \author: E. van der Weide
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  */
 class CGraphColoringStructure {
 public:

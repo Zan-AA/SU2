@@ -3,7 +3,7 @@
  * \brief Headers of the main subroutines used by SU2_CFD.
  *        The subroutines and functions are in the <i>definition_structure.cpp</i> file.
  * \author F. Palacios, T. Economon
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -43,8 +43,8 @@
 #include <ctime>
 
 #include "../../Common/include/fem_geometry_structure.hpp"
-#include "../../Common/include/geometry_structure.hpp"
-#include "../../Common/include/config_structure.hpp"
+#include "../../Common/include/geometry/CGeometry.hpp"
+#include "../../Common/include/CConfig.hpp"
 
 using namespace std;
 

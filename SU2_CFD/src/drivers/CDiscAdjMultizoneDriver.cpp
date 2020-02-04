@@ -2,7 +2,7 @@
  * \file CDiscAdjMultizoneDriver.cpp
  * \brief The main subroutines for driving adjoint multi-zone problems
  * \author O. Burghardt, T. Albring, R. Sanchez
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>

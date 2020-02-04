@@ -3,7 +3,7 @@
 # \file configure.ac
 # \brief Main file for configuring the autoconf/automake build process
 # \author M. Colonno, T. Economon, F. Palacios, B. Kirk
-# \version 6.2.0 "Falcon"
+# \version 7.0.1 "Blackbird"
 #
 # The current SU2 release has been coordinated by the
 # SU2 International Developers Society <www.su2devsociety.org>

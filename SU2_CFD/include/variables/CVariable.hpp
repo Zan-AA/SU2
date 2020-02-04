@@ -4,7 +4,7 @@
           variables, function definitions in file <i>CVariable.cpp</i>.
           All variables are children of at least this class.
  * \author F. Palacios, T. Economon
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -45,7 +45,7 @@
 #include <iostream>
 #include <cstdlib>
 
-#include "../../../Common/include/config_structure.hpp"
+#include "../../../Common/include/CConfig.hpp"
 #include "../fluid_model.hpp"
 #include "../../../Common/include/toolboxes/C2DContainer.hpp"
 
@@ -1722,7 +1722,7 @@ public:
    * \brief A virtual member.
 
    */
-  inline virtual su2double *GetStress_FEM(unsigned long iPoint) {return nullptr;}
+  inline virtual const su2double *GetStress_FEM(unsigned long iPoint) const {return nullptr;}
 
   /*!
    * \brief A virtual member.

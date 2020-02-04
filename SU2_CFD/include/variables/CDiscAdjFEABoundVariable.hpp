@@ -2,7 +2,7 @@
  * \file CDiscAdjFEABoundVariable.hpp
  * \brief Main class for defining the variables of the adjoint FEA solver at the boundary.
  * \author Ruben Sanchez
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -45,7 +45,7 @@
  * \brief Main class for defining the variables on the FEA boundaries for adjoint applications.
  * \ingroup Discrete_Adjoint
  * \author R. Sanchez.
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  */
 class CDiscAdjFEABoundVariable final : public CDiscAdjFEAVariable {
 private:

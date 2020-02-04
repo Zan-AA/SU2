@@ -4,7 +4,7 @@
  *        with high order elements.
  *        The functions are in the <i>cgns_elements.cpp</i> file.
  * \author E. van der Weide
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * SU2 Original Developers: Dr. Francisco D. Palacios.
  *                          Dr. Thomas D. Economon.
@@ -41,7 +41,7 @@
   #include "cgnslib.h"
 #endif
 
-#include "primal_grid_structure.hpp"
+#include "geometry/primal_grid/CPrimalGridFEM.hpp"
 
 /* Forward declaration of CBoundaryFace to avoid problems. */
 class CBoundaryFace;
@@ -53,7 +53,7 @@ class CBoundaryFace;
  * \class CCGNSElementType
  * \brief Class which stores the CGNS element type info for a connectivity
           section.
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  */
 
 class CCGNSElementType {

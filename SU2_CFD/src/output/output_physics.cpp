@@ -2,7 +2,7 @@
  * \file output_physics.cpp
  * \brief Main subroutines to compute physical output quantities such as CL, CD, entropy generation, mass flow, ecc... .
  * \author S. Vitale
- * \version 6.2.0 "Falcon"
+ * \version 7.0.1 "Blackbird"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -37,8 +37,8 @@
 
 #include "../../include/output/COutputLegacy.hpp"
 
-#include "../../../Common/include/geometry_structure.hpp"
-#include "../../include/solver_structure.hpp"
+#include "../../../Common/include/geometry/CGeometry.hpp"
+#include "../../include/solvers/CSolver.hpp"
 
 void COutputLegacy::ComputeTurboPerformance(CSolver *solver_container, CGeometry *geometry, CConfig *config) {
 
