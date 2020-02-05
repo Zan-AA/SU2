@@ -3,7 +3,7 @@
 ## \file parallel_regression.py
 #  \brief Python script for automated regression testing of SU2 examples
 #  \author A. Aranake, A. Campos, T. Economon, T. Lukaczyk, S. Padron
-#  \version 7.0.1 "Blackbird"
+#  \version 6.2.0 "Falcon"
 #
 # The current SU2 release has been coordinated by the
 # SU2 International Developers Society <www.su2devsociety.org>
@@ -1105,9 +1105,9 @@ def main():
     stat_fsi_restart.tol       = 0.00001
     test_list.append(stat_fsi_restart)
 
-    # ###############################
-    # ### Conjugate heat transfer ###
-    # ###############################
+    ##########################
+    ### Zonal multiphysics ###
+    ##########################
 
     # CHT incompressible
     cht_incompressible           = TestCase('cht_incompressible')
@@ -1120,18 +1120,6 @@ def main():
     cht_incompressible.multizone = True
     cht_incompressible.tol       = 0.00001
     test_list.append(cht_incompressible)
-
-    # CHT compressible
-    cht_compressible           = TestCase('cht_compressible')
-    cht_compressible.cfg_dir   = "coupled_cht/comp_2d"
-    cht_compressible.cfg_file  = "cht_2d_3cylinders.cfg"
-    cht_compressible.test_iter = 10
-    cht_compressible.test_vals = [-4.257607, -0.526125, -0.526125, -0.526125] #last 4 columns
-    cht_compressible.su2_exec  = "SU2_CFD"
-    cht_compressible.timeout   = 1600
-    cht_compressible.multizone = True
-    cht_compressible.tol       = 0.00001
-    test_list.append(cht_compressible)
 
     ##########################
     ###   Python wrapper   ###
@@ -1432,21 +1420,6 @@ def main():
     
     pass_list = [ test.run_test() for test in test_list ]
 
-    ######################################
-    ### RUN SU2_SOL TESTS              ###
-    ######################################
-
-    # parallel STL output using 
-    stl_writer_test                = TestCase('stl_writer_test')
-    stl_writer_test.cfg_dir        = "rans/oneram6"
-    stl_writer_test.cfg_file       = "turb_ONERAM6.cfg"
-    stl_writer_test.test_iter      = 1
-    stl_writer_test.su2_exec       = "mpirun -n 2 SU2_SOL"
-    stl_writer_test.timeout        = 1600
-    stl_writer_test.reference_file = "surface_flow.stl.ref"
-    stl_writer_test.test_file      = "surface_flow.stl"
-    pass_list.append(stl_writer_test.run_filediff())
-    test_list.append(stl_writer_test)
 
     ######################################
     ### RUN SU2_DEF TESTS              ###

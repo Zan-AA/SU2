@@ -2,7 +2,7 @@
  * \file linear_solvers_structure_b.hpp
  * \brief Routines for the linear solver used in the reverse sweep of AD.
  * \author T. Albring
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -37,7 +37,7 @@
 
 #pragma once
 
-#include "../CConfig.hpp"
+#include "../config_structure.hpp"
 
 #ifdef CODI_REVERSE_TYPE
 template<class ScalarType>

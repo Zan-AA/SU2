@@ -2,7 +2,7 @@
  * \file fluid_model.hpp
  * \brief Headers of the main thermodynamic subroutines of the SU2 solvers.
  * \author S. Vitale, G. Gori, M. Pini, A. Guardone, P. Colonna, T. Economon
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -53,7 +53,7 @@
 using namespace std;
 
 #include "../include/transport_model.hpp"
-#include "../../Common/include/CConfig.hpp"
+#include "../../Common/include/config_structure.hpp"
 
 /*!
  * \class CFluidModel

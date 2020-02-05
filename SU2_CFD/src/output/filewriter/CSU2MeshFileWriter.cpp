@@ -1,38 +1,12 @@
-/*!
- * \file CSU2MeshFileWriter.cpp
- * \brief Filewriter class SU2 native mesh format.
- * \author T. Albring
- * \version 7.0.1 "Blackbird"
- *
- * SU2 Project Website: https://su2code.github.io
- *
- * The SU2 Project is maintained by the SU2 Foundation
- * (http://su2foundation.org)
- *
- * Copyright 2012-2019, SU2 Contributors (cf. AUTHORS.md)
- *
- * SU2 is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * SU2 is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "../../../include/output/filewriter/CSU2MeshFileWriter.hpp"
 #include "../../../../Common/include/toolboxes/printing_toolbox.hpp"
 
 const string CSU2MeshFileWriter::fileExt = ".su2";
 
-CSU2MeshFileWriter::CSU2MeshFileWriter(string valFileName, CParallelDataSorter *valDataSorter,
-                                       unsigned short valiZone, unsigned short valnZone) :
-   CFileWriter(std::move(valFileName), valDataSorter, fileExt), iZone(valiZone), nZone(valnZone) {}
+CSU2MeshFileWriter::CSU2MeshFileWriter(vector<string> fields, unsigned short nDim,  
+                                       string fileName, CParallelDataSorter *dataSorter,
+                                       unsigned short iZone, unsigned short nZone) : 
+   CFileWriter(std::move(fields), std::move(fileName), dataSorter, fileExt, nDim), iZone(iZone), nZone(nZone) {}
 
 
 CSU2MeshFileWriter::~CSU2MeshFileWriter(){
@@ -75,9 +49,9 @@ void CSU2MeshFileWriter::Write_Data(){
     }
     
     /*--- Write dimensions data. ---*/
-
-    output_file << "NDIME= " << dataSorter->GetnDim() << endl;
-
+    
+    output_file << "NDIME= " << nDim << endl;
+    
     output_file << "NELEM= " << dataSorter->GetnElem() << endl;
     
     output_file.close();
@@ -177,8 +151,8 @@ void CSU2MeshFileWriter::Write_Data(){
          or halo nodes, even if they are output in the viz. files. ---*/
         
         /*--- Loop over the variables and write the values to file ---*/
-
-        for (iDim = 0; iDim < dataSorter->GetnDim(); iDim++) {
+        
+        for (iDim = 0; iDim < nDim; iDim++) {
           output_file << scientific << dataSorter->GetData(iDim, iPoint) << "\t";
         }
         

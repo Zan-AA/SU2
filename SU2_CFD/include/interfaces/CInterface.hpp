@@ -3,7 +3,7 @@
  * \brief Declarations and inlines of the transfer structure.
  *        The subroutines and functions are in the physics folders.
  * \author R. Sanchez
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -49,10 +49,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "../../../Common/include/CConfig.hpp"
-#include "../../../Common/include/geometry/CGeometry.hpp"
-#include "../solvers/CSolver.hpp"
-
+#include "../../../Common/include/config_structure.hpp"
+#include "../../../Common/include/geometry_structure.hpp"
+#include "../solver_structure.hpp"
 
 using namespace std;
 
@@ -60,7 +59,7 @@ using namespace std;
  * \class CInterface
  * \brief Main class for defining the physical transfer of information.
  * \author R. Sanchez
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  */
 
 class CInterface {

@@ -2,7 +2,7 @@
  * \file CFEAVariable.hpp
  * \brief Class for defining the variables of the FEM structural problem.
  * \author F. Palacios, T. Economon
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -44,7 +44,7 @@
  * \brief Class for defining the variables of the FEM structural problem.
  * \ingroup Structural Finite Element Analysis Variables
  * \author F. Palacios, R. Sanchez.
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  */
 class CFEAVariable : public CVariable {
 protected:
@@ -89,7 +89,7 @@ public:
    * \brief Get the value of the stress.
    * \return Value of the stress.
    */
-  inline const su2double *GetStress_FEM(unsigned long iPoint) const final { return Stress[iPoint]; }
+  inline su2double *GetStress_FEM(unsigned long iPoint) final { return Stress[iPoint]; }
 
   /*!
    * \brief Set the value of the stress at the node

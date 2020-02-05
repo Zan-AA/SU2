@@ -3,7 +3,7 @@
  * \brief Headers for the classes related to linear solvers (CG, FGMRES, etc)
  *        The subroutines and functions are in the <i>linear_solvers_structure.cpp</i> file.
  * \author F. Palacios, J. Hicken, T. Economon
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -269,13 +269,13 @@ public:
    * \brief indexing operator with assignment permitted
    * \param[in] i = local index to access
    */
-  inline ScalarType & operator[](unsigned long i) { return vec_val[i]; }
+  inline ScalarType & operator[](const unsigned long & i) { return vec_val[i]; }
 
   /*!
    * \brief indexing operator with assignment not permitted
    * \param[in] i = local index to access
    */
-  inline const ScalarType & operator[](unsigned long i) const { return vec_val[i]; }
+  inline const ScalarType & operator[](const unsigned long & i) const { return vec_val[i]; }
 
   /*!
    * \brief the L2 norm of the CSysVector

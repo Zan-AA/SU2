@@ -1,5 +1,5 @@
-project('SU2', 'c', 'cpp',
-        version: '7.0.1',
+project('SU2', 'c', 'cpp', 
+        version: '6.2.0', 
         license: 'LGPL2',
         default_options: ['buildtype=release', 
                           'warning_level=0', 
@@ -21,13 +21,6 @@ default_warning_flags = ['-Wno-unused-parameter',
 # external dependencies 
 mpi_dep = [dependency('mpi', language:'c', required : get_option('with-mpi')), 
            dependency('mpi', language:'cpp', required : get_option('with-mpi'))]
-
-# OpenMP
-omp = get_option('with-omp')
-
-if omp
-  omp_dep = dependency('openmp', language:'cpp')
-endif
 
 if get_option('enable-autodiff') or get_option('enable-directdiff')
   codi_dep = [declare_dependency(include_directories: 'externals/codi/include')]
@@ -72,11 +65,6 @@ if mpi_dep[0].found() and mpi_dep[1].found()
   if get_option('enable-autodiff') or get_option('enable-directdiff')
     codi_dep += declare_dependency(include_directories: ['externals/medi/include', 'externals/medi/src'])
   endif
-endif
-
-if omp
-  # add OpenMP dependency
-  su2_deps += omp_dep
 endif
 
 if get_option('enable-tecio')
@@ -141,12 +129,12 @@ if get_option('enable-pywrapper')
 endif
 
 message('''-------------------------------------------------------------------------
-         |    ___ _   _ ___                                                      |
-         |   / __| | | |_  )   Release 7.0.1 "Blackbird"                         |
-         |   \__ \ |_| |/ /                                                      |
-         |   |___/\___//___|   Meson Configuration Summary                       |
-         |                                                                       |
-         -------------------------------------------------------------------------
+         |    ___ _   _ ___                                                      | 
+         |   / __| | | |_  )   Release 6.2.0 'Falcon'                            | 
+         |   \__ \ |_| |/ /                                                      | 
+         |   |___/\___//___|   Configuration Summary                             | 
+         |                                                                       | 
+         ------------------------------------------------------------------------- 
          
          Option          Value
          ---------------------

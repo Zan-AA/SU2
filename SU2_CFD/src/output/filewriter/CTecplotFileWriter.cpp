@@ -1,37 +1,11 @@
-/*!
- * \file CTecplotFileWriter.cpp
- * \brief Filewriter class for Tecplot ASCII format.
- * \author T. Albring
- * \version 7.0.1 "Blackbird"
- *
- * SU2 Project Website: https://su2code.github.io
- *
- * The SU2 Project is maintained by the SU2 Foundation
- * (http://su2foundation.org)
- *
- * Copyright 2012-2019, SU2 Contributors (cf. AUTHORS.md)
- *
- * SU2 is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * SU2 is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "../../../include/output/filewriter/CTecplotFileWriter.hpp"
 
 const string CTecplotFileWriter::fileExt = ".dat";
 
-CTecplotFileWriter::CTecplotFileWriter(string valFileName, CParallelDataSorter *valDataSorter,
-                                       unsigned long valTimeIter, su2double valTimeStep) :
-  CFileWriter(std::move(valFileName), valDataSorter, fileExt), timeIter(valTimeIter), timeStep(valTimeStep){}
+CTecplotFileWriter::CTecplotFileWriter(vector<string> fields, unsigned short nDim, 
+                                       string fileName, CParallelDataSorter *dataSorter,
+                                       unsigned long time_iter, su2double timestep) : 
+  CFileWriter(std::move(fields), std::move(fileName), dataSorter, fileExt, nDim), time_iter(time_iter), timestep(timestep){}
 
 CTecplotFileWriter::~CTecplotFileWriter(){}
 
@@ -40,9 +14,7 @@ void CTecplotFileWriter::Write_Data(){
   if (!dataSorter->GetConnectivitySorted()){
     SU2_MPI::Error("Connectivity must be sorted.", CURRENT_FUNCTION);
   }
-
-  const vector<string> fieldNames = dataSorter->GetFieldNames();
-
+  
   unsigned short iVar;
   
   unsigned long iPoint, iElem;
@@ -50,19 +22,20 @@ void CTecplotFileWriter::Write_Data(){
   int iProcessor;
 
   ofstream Tecplot_File;
-
-  fileSize = 0.0;
-
+  
+  file_size = 0.0;
+  
   /*--- Set a timer for the file writing. ---*/
   
 #ifndef HAVE_MPI
-  startTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
+  StartTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
 #else
-  startTime = MPI_Wtime();
+  StartTime = MPI_Wtime();
 #endif
   
   /*--- Reduce the total number of each element. ---*/
 
+  unsigned long nTot_Line, nTot_Tria, nTot_Quad, nTot_Tetr, nTot_Hexa, nTot_Pris, nTot_Pyra;
   unsigned long nParallel_Line = dataSorter->GetnElem(LINE),
                 nParallel_Tria = dataSorter->GetnElem(TRIANGLE),
                 nParallel_Quad = dataSorter->GetnElem(QUADRILATERAL),
@@ -70,15 +43,25 @@ void CTecplotFileWriter::Write_Data(){
                 nParallel_Hexa = dataSorter->GetnElem(HEXAHEDRON),
                 nParallel_Pris = dataSorter->GetnElem(PRISM),
                 nParallel_Pyra = dataSorter->GetnElem(PYRAMID);
-  
-  unsigned long nTot_Line = dataSorter->GetnElemGlobal(LINE),
-                nTot_Tria = dataSorter->GetnElemGlobal(TRIANGLE),
-                nTot_Quad = dataSorter->GetnElemGlobal(QUADRILATERAL),
-                nTot_Tetr = dataSorter->GetnElemGlobal(TETRAHEDRON),
-                nTot_Hexa = dataSorter->GetnElemGlobal(HEXAHEDRON),
-                nTot_Pris = dataSorter->GetnElemGlobal(PRISM),
-                nTot_Pyra = dataSorter->GetnElemGlobal(PYRAMID);
+#ifdef HAVE_MPI
+  SU2_MPI::Allreduce(&nParallel_Line, &nTot_Line, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(&nParallel_Tria, &nTot_Tria, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(&nParallel_Quad, &nTot_Quad, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(&nParallel_Tetr, &nTot_Tetr, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(&nParallel_Hexa, &nTot_Hexa, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(&nParallel_Pris, &nTot_Pris, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(&nParallel_Pyra, &nTot_Pyra, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+#else
+  nTot_Line      = nParallel_Line;
 
+  nTot_Tria = nParallel_Tria;
+  nTot_Quad = nParallel_Quad;
+  nTot_Tetr = nParallel_Tetr;
+  nTot_Hexa = nParallel_Hexa;
+  nTot_Pris = nParallel_Pris;
+  nTot_Pyra = nParallel_Pyra;
+#endif
+    
   /*--- Open Tecplot ASCII file and write the header. ---*/
   
   if (rank == MASTER_NODE) {
@@ -87,22 +70,22 @@ void CTecplotFileWriter::Write_Data(){
     Tecplot_File << "TITLE = \"Visualization of the solution\"" << endl;
     
     Tecplot_File << "VARIABLES = ";
-    for (iVar = 0; iVar < fieldNames.size()-1; iVar++) {
-      Tecplot_File << "\"" << fieldNames[iVar] << "\",";
+    for (iVar = 0; iVar < fieldnames.size()-1; iVar++) {
+      Tecplot_File << "\"" << fieldnames[iVar] << "\",";
     }
-    Tecplot_File << "\"" << fieldNames[fieldNames.size()-1] << "\"" << endl;
-
+    Tecplot_File << "\"" << fieldnames[fieldnames.size()-1] << "\"" << endl;
+    
     /*--- Write the header ---*/
     
     Tecplot_File << "ZONE ";
 
-    if (timeStep > 0.0){
-      Tecplot_File << "STRANDID="<<SU2_TYPE::Int(timeIter+1)<<", SOLUTIONTIME="<< timeIter*timeStep <<", ";
+    if (timestep > 0.0){
+      Tecplot_File << "STRANDID="<<SU2_TYPE::Int(time_iter+1)<<", SOLUTIONTIME="<< time_iter*timestep <<", ";      
     }
-
-    Tecplot_File << "NODES= "<< dataSorter->GetnPointsGlobal() <<", ELEMENTS= "<< dataSorter->GetnElemGlobal();
-
-    if (dataSorter->GetnDim() == 3){
+    
+    Tecplot_File << "NODES= "<< dataSorter->GetnPointsGlobal() <<", ELEMENTS= "<< dataSorter->GetnElem();
+    
+    if (nDim == 3){
       if ((nTot_Quad > 0 || nTot_Tria > 0) && (nTot_Hexa + nTot_Pris + nTot_Pyra + nTot_Tetr == 0)){
         Tecplot_File << ", DATAPACKING=POINT, ZONETYPE=FEQUADRILATERAL" << endl;
       }
@@ -138,7 +121,7 @@ void CTecplotFileWriter::Write_Data(){
       
       
       for (iPoint = 0; iPoint < dataSorter->GetnPoints(); iPoint++) {
-        for (iVar = 0; iVar < fieldNames.size(); iVar++)
+        for (iVar = 0; iVar < fieldnames.size(); iVar++)
           Tecplot_File << scientific << dataSorter->GetData(iVar, iPoint) << "\t";
         Tecplot_File << endl;
       }
@@ -217,17 +200,17 @@ void CTecplotFileWriter::Write_Data(){
   /*--- Compute and store the write time. ---*/
   
 #ifndef HAVE_MPI
-  stopTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
+  StopTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
 #else
-  stopTime = MPI_Wtime();
+  StopTime = MPI_Wtime();
 #endif
-  usedTime = stopTime-startTime;
-
-  fileSize = Determine_Filesize(fileName);
-
+  UsedTime = StopTime-StartTime;
+  
+  file_size = Determine_Filesize(fileName);
+  
   /*--- Compute and store the bandwidth ---*/
-
-  bandwidth = fileSize/(1.0e6)/usedTime;
+  
+  Bandwidth = file_size/(1.0e6)/UsedTime;
 }
 
 

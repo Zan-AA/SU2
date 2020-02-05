@@ -2,7 +2,7 @@
  * \file iteration_structure.cpp
  * \brief Main subroutines used by SU2_CFD
  * \author F. Palacios, T. Economon
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -36,7 +36,6 @@
  */
 
 #include "../include/iteration_structure.hpp"
-#include "../include/solvers/CFEASolver.hpp"
 
 CIteration::CIteration(CConfig *config) {
   rank = SU2_MPI::GetRank();
@@ -1644,6 +1643,7 @@ void CFEAIteration::Update(COutput *output,
   bool static_fem = (!config[val_iZone]->GetTime_Domain());         // Static problems
   bool fsi = config[val_iZone]->GetFSI_Simulation();         // Fluid-Structure Interaction problems
 
+
   /*----------------- Compute averaged nodal stress and reactions ------------------------*/
 
   solver[val_iZone][val_iInst][MESH_0][FEA_SOL]->Compute_NodalStress(geometry[val_iZone][val_iInst][MESH_0], numerics[val_iZone][val_iInst][MESH_0][FEA_SOL], config[val_iZone]);
@@ -1654,7 +1654,7 @@ void CFEAIteration::Update(COutput *output,
     integration[val_iZone][val_iInst][FEA_SOL]->SetFEM_StructuralSolver(geometry[val_iZone][val_iInst][MESH_0], solver[val_iZone][val_iInst][MESH_0], config[val_iZone], MESH_0);
     integration[val_iZone][val_iInst][FEA_SOL]->SetConvergence(false);
 
-    /*--- Verify convergence criteria (based on total time) ---*/
+      /*--- Verify convergence criteria (based on total time) ---*/
 
     Physical_dt = config[val_iZone]->GetDelta_DynTime();
     Physical_t  = (TimeIter+1)*Physical_dt;

@@ -1,39 +1,8 @@
-/*!
- * \file CFEMDataSorter.cpp
- * \brief Datasorter class for FEM solvers.
- * \author T. Albring
- * \version 7.0.1 "Blackbird"
- *
- * SU2 Project Website: https://su2code.github.io
- *
- * The SU2 Project is maintained by the SU2 Foundation
- * (http://su2foundation.org)
- *
- * Copyright 2012-2019, SU2 Contributors (cf. AUTHORS.md)
- *
- * SU2 is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * SU2 is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "../../../include/output/filewriter/CFEMDataSorter.hpp"
 #include "../../../../Common/include/fem_geometry_structure.hpp"
-#include <numeric>
 
-CFEMDataSorter::CFEMDataSorter(CConfig *config, CGeometry *geometry, const vector<string> &valFieldNames) :
-  CParallelDataSorter(config, valFieldNames){
-
-  nDim = geometry->GetnDim();
-
+CFEMDataSorter::CFEMDataSorter(CConfig *config, CGeometry *geometry, unsigned short nFields) : CParallelDataSorter(config, nFields){
+ 
   /*--- Create an object of the class CMeshFEM_DG and retrieve the necessary
    geometrical information for the FEM DG solver. ---*/
   
@@ -56,18 +25,22 @@ CFEMDataSorter::CFEMDataSorter(CConfig *config, CGeometry *geometry, const vecto
       
       const unsigned long globalIndex = volElem[l].offsetDOFsSolGlobal + j;
       globalID.push_back(globalIndex);
-
-      nLocalPointsBeforeSort++;
+      
+      nLocalPoint_Sort++;
     }
   }
-
-  SU2_MPI::Allreduce(&nLocalPointsBeforeSort, &nGlobalPointBeforeSort, 1,
+  
+#ifdef HAVE_MPI
+  SU2_MPI::Allreduce(&nLocalPoint_Sort, &nGlobalPoint_Sort, 1,
                      MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+#else
+  nGlobalPoint_Sort = nLocalPoint_Sort;
+#endif
 
   /*--- Create a linear partition --- */
-
-  linearPartitioner = new CLinearPartitioner(nGlobalPointBeforeSort, 0);
-
+  
+  linearPartitioner = new CLinearPartitioner(nGlobalPoint_Sort, 0);
+  
   /*--- Prepare the send buffers ---*/
   
   PrepareSendBuffers(globalID);
@@ -93,19 +66,25 @@ void CFEMDataSorter::SortConnectivity(CConfig *config, CGeometry *geometry, bool
   
   /*--- Sort volumetric grid connectivity. ---*/
   
-  nElemPerType.fill(0);
-
   SortVolumetricConnectivity(config, geometry, TRIANGLE     );
   SortVolumetricConnectivity(config, geometry, QUADRILATERAL);
   SortVolumetricConnectivity(config, geometry, TETRAHEDRON  );
   SortVolumetricConnectivity(config, geometry, HEXAHEDRON   );
   SortVolumetricConnectivity(config, geometry, PRISM        );
   SortVolumetricConnectivity(config, geometry, PYRAMID      );
-   
-  SetTotalElements();
   
-  connectivitySorted = true;
-
+  
+  /*--- Reduce the total number of cells we will be writing in the output files. ---*/
+  
+  unsigned long nTotal_Elem = nParallel_Tria + nParallel_Quad + nParallel_Tetr + nParallel_Hexa + nParallel_Pris + nParallel_Pyra;
+#ifndef HAVE_MPI
+  nGlobal_Elem_Par = nTotal_Elem;
+#else
+  SU2_MPI::Allreduce(&nTotal_Elem, &nGlobal_Elem_Par, 1, MPI_UNSIGNED_LONG, MPI_SUM, MPI_COMM_WORLD);
+#endif
+  
+  connectivity_sorted = true;
+  
 }
 
 void CFEMDataSorter::SortVolumetricConnectivity(CConfig *config, CGeometry *geometry, unsigned short Elem_Type) {
@@ -204,34 +183,38 @@ void CFEMDataSorter::SortVolumetricConnectivity(CConfig *config, CGeometry *geom
         Conn_SubElem[kNode] = connSubElems[k] + volElem[i].offsetDOFsSolGlobal + 1;
     }
   }
-  
-  nElemPerType[TypeMap.at(Elem_Type)] = nSubElem_Local;
 
   /*--- Store the particular global element count in the class data,
         and set the class data pointer to the connectivity array. ---*/
   switch (Elem_Type) {
     case TRIANGLE:
-      if (Conn_Tria_Par != NULL) delete [] Conn_Tria_Par;
+      nParallel_Tria = nSubElem_Local;
+      if (Conn_Tria_Par != NULL) delete [] Conn_Tria_Par;      
       Conn_Tria_Par = Conn_SubElem;
       break;
     case QUADRILATERAL:
-      if (Conn_Quad_Par != NULL) delete [] Conn_Quad_Par;
+      nParallel_Quad = nSubElem_Local;
+      if (Conn_Quad_Par != NULL) delete [] Conn_Quad_Par;            
       Conn_Quad_Par = Conn_SubElem;
       break;
     case TETRAHEDRON:
-      if (Conn_Tetr_Par != NULL) delete [] Conn_Tetr_Par;
+      nParallel_Tetr = nSubElem_Local;
+      if (Conn_Tetr_Par != NULL) delete [] Conn_Tetr_Par;                  
       Conn_Tetr_Par = Conn_SubElem;
       break;
     case HEXAHEDRON:
-      if (Conn_Hexa_Par != NULL) delete [] Conn_Hexa_Par;
+      nParallel_Hexa = nSubElem_Local;
+      if (Conn_Hexa_Par != NULL) delete [] Conn_Hexa_Par;                        
       Conn_Hexa_Par = Conn_SubElem;
       break;
     case PRISM:
-      if (Conn_Pris_Par != NULL) delete [] Conn_Pris_Par;
+      nParallel_Pris = nSubElem_Local;
+      if (Conn_Pris_Par != NULL) delete [] Conn_Pris_Par;                        
       Conn_Pris_Par = Conn_SubElem;
       break;
     case PYRAMID:
-      if (Conn_Pyra_Par != NULL) delete [] Conn_Pyra_Par;
+      nParallel_Pyra = nSubElem_Local;
+      if (Conn_Pyra_Par != NULL) delete [] Conn_Pyra_Par;                        
       Conn_Pyra_Par = Conn_SubElem;
       break;
     default:

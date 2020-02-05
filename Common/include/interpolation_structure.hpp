@@ -3,7 +3,7 @@
  * \brief Headers of the main subroutines used by SU2_FSI.
  *        The subroutines and functions are in the <i>interpolation_structure.cpp</i> file.
  * \author H. Kline
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -46,8 +46,8 @@
 #include <limits>
 #include <stdexcept>
 
-#include "CConfig.hpp"
-#include "geometry/CGeometry.hpp"
+#include "config_structure.hpp"
+#include "geometry_structure.hpp"
 
 using namespace std;
 

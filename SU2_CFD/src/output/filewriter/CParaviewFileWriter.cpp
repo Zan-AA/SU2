@@ -1,36 +1,10 @@
-/*!
- * \file CParaviewFileWriter.cpp
- * \brief Filewriter class for Paraview ASCII format.
- * \author T. Albring
- * \version 7.0.1 "Blackbird"
- *
- * SU2 Project Website: https://su2code.github.io
- *
- * The SU2 Project is maintained by the SU2 Foundation
- * (http://su2foundation.org)
- *
- * Copyright 2012-2019, SU2 Contributors (cf. AUTHORS.md)
- *
- * SU2 is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * SU2 is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "../../../include/output/filewriter/CParaviewFileWriter.hpp"
 
 const string CParaviewFileWriter::fileExt = ".vtk";
 
-CParaviewFileWriter::CParaviewFileWriter(string valFileName, CParallelDataSorter *valDataSorter) :
-  CFileWriter(std::move(valFileName), valDataSorter, fileExt){}
+CParaviewFileWriter::CParaviewFileWriter(vector<string> fields, unsigned short nDim, 
+                                         string fileName, CParallelDataSorter *dataSorter) : 
+  CFileWriter(std::move(fields), std::move(fileName), dataSorter, fileExt, nDim){}
 
 
 CParaviewFileWriter::~CParaviewFileWriter(){}
@@ -40,8 +14,8 @@ void CParaviewFileWriter::Write_Data(){
   if (!dataSorter->GetConnectivitySorted()){
     SU2_MPI::Error("Connectivity must be sorted.", CURRENT_FUNCTION);
   }
-
-  unsigned short iDim = 0, nDim = dataSorter->GetnDim();
+  
+  unsigned short iDim;
 
   unsigned long iPoint, iElem;
 
@@ -50,15 +24,13 @@ void CParaviewFileWriter::Write_Data(){
   ofstream Paraview_File;
 
   int iProcessor;
-
-  const vector<string> fieldNames = dataSorter->GetFieldNames();
-
+  
   /*--- Set a timer for the file writing. ---*/
   
 #ifndef HAVE_MPI
-  startTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
+  StartTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
 #else
-  startTime = MPI_Wtime();
+  StartTime = MPI_Wtime();
 #endif
   
   /*--- Open Paraview ASCII file and write the header. ---*/
@@ -109,6 +81,7 @@ void CParaviewFileWriter::Write_Data(){
 
   /*--- Reduce the total number of each element. ---*/
 
+  unsigned long nTot_Line, nTot_Tria, nTot_Quad, nTot_Tetr, nTot_Hexa, nTot_Pris, nTot_Pyra;
   unsigned long nParallel_Line = dataSorter->GetnElem(LINE),
                 nParallel_Tria = dataSorter->GetnElem(TRIANGLE),
                 nParallel_Quad = dataSorter->GetnElem(QUADRILATERAL),
@@ -116,14 +89,32 @@ void CParaviewFileWriter::Write_Data(){
                 nParallel_Hexa = dataSorter->GetnElem(HEXAHEDRON),
                 nParallel_Pris = dataSorter->GetnElem(PRISM),
                 nParallel_Pyra = dataSorter->GetnElem(PYRAMID);
+#ifdef HAVE_MPI
+  SU2_MPI::Reduce(&nParallel_Line, &nTot_Line, 1, MPI_UNSIGNED_LONG, MPI_SUM, MASTER_NODE, MPI_COMM_WORLD);
+  SU2_MPI::Reduce(&nParallel_Tria, &nTot_Tria, 1, MPI_UNSIGNED_LONG, MPI_SUM, MASTER_NODE, MPI_COMM_WORLD);
+  SU2_MPI::Reduce(&nParallel_Quad, &nTot_Quad, 1, MPI_UNSIGNED_LONG, MPI_SUM, MASTER_NODE, MPI_COMM_WORLD);
+  SU2_MPI::Reduce(&nParallel_Tetr, &nTot_Tetr, 1, MPI_UNSIGNED_LONG, MPI_SUM, MASTER_NODE, MPI_COMM_WORLD);
+  SU2_MPI::Reduce(&nParallel_Hexa, &nTot_Hexa, 1, MPI_UNSIGNED_LONG, MPI_SUM, MASTER_NODE, MPI_COMM_WORLD);
+  SU2_MPI::Reduce(&nParallel_Pris, &nTot_Pris, 1, MPI_UNSIGNED_LONG, MPI_SUM, MASTER_NODE, MPI_COMM_WORLD);
+  SU2_MPI::Reduce(&nParallel_Pyra, &nTot_Pyra, 1, MPI_UNSIGNED_LONG, MPI_SUM, MASTER_NODE, MPI_COMM_WORLD);
+#else
+  nTot_Line      = nParallel_Line;
 
+  nTot_Tria = nParallel_Tria;
+  nTot_Quad = nParallel_Quad;
+  nTot_Tetr = nParallel_Tetr;
+  nTot_Hexa = nParallel_Hexa;
+  nTot_Pris = nParallel_Pris;
+  nTot_Pyra = nParallel_Pyra;
+#endif
+  
   if (rank == MASTER_NODE) {
     
     /*--- Write the header ---*/
-    nGlobal_Elem_Storage = dataSorter->GetnElemGlobal() + dataSorter->GetnConnGlobal();
-
-    Paraview_File << "\nCELLS " << dataSorter->GetnElemGlobal() << "\t" << nGlobal_Elem_Storage << "\n";
-
+    nGlobal_Elem_Storage = nTot_Line*3 + nTot_Tria*4 + nTot_Quad*5 + nTot_Tetr*5 + nTot_Hexa*9 + nTot_Pris*7 + nTot_Pyra*6;
+    
+    Paraview_File << "\nCELLS " << dataSorter->GetnElem() << "\t" << nGlobal_Elem_Storage << "\n";
+    
   }
 
   Paraview_File.flush();
@@ -207,8 +198,8 @@ void CParaviewFileWriter::Write_Data(){
   if (rank == MASTER_NODE) {
     
     /*--- Write the header ---*/
-    Paraview_File << "\nCELL_TYPES " << dataSorter->GetnElemGlobal() << "\n";
-
+    Paraview_File << "\nCELL_TYPES " << dataSorter->GetnElem() << "\n";
+    
   }
 
   Paraview_File.flush();
@@ -249,19 +240,19 @@ void CParaviewFileWriter::Write_Data(){
   /*--- Need to adjust container location to avoid PointID tag and coords. ---*/
   unsigned short VarCounter = varStart;
 
-  for (unsigned short iField = varStart; iField < fieldNames.size(); iField++) {
+  for (unsigned short iField = varStart; iField < fieldnames.size(); iField++) {
 
-    string fieldname = fieldNames[iField];
+    string fieldname = fieldnames[iField];
 
     fieldname.erase(remove(fieldname.begin(), fieldname.end(), '"'), fieldname.end());
 
     bool output_variable = true, isVector = false;
-    size_t found = fieldNames[iField].find("_x");
+    size_t found = fieldnames[iField].find("_x");
     if (found!=string::npos) {
       output_variable = true;
       isVector = true;
     }
-    found = fieldNames[iField].find("_y");
+    found = fieldnames[iField].find("_y");
     if (found!=string::npos) {
       output_variable = false;
       //skip
@@ -271,7 +262,7 @@ void CParaviewFileWriter::Write_Data(){
 #endif
       VarCounter++;
     }
-    found = fieldNames[iField].find("_z");
+found = fieldnames[iField].find("_z");
     if (found!=string::npos) {
       output_variable = false;
       //skip
@@ -359,16 +350,16 @@ void CParaviewFileWriter::Write_Data(){
   /*--- Compute and store the write time. ---*/
   
 #ifndef HAVE_MPI
-  stopTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
+  StopTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
 #else
-  stopTime = MPI_Wtime();
+  StopTime = MPI_Wtime();
 #endif
-  usedTime = stopTime-startTime;
-
-  fileSize = Determine_Filesize(fileName);
-
+  UsedTime = StopTime-StartTime;
+  
+  file_size = Determine_Filesize(fileName);
+  
   /*--- Compute and store the bandwidth ---*/
-
-  bandwidth = fileSize/(1.0e6)/usedTime;
+  
+  Bandwidth = file_size/(1.0e6)/UsedTime;
 }
 

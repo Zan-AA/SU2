@@ -2,7 +2,7 @@
  * \file linear_solvers_structure.cpp
  * \brief Main classes required for solving linear systems of equations
  * \author J. Hicken, F. Palacios, T. Economon
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -37,17 +37,6 @@
 
 #include "../../include/linear_algebra/CSysSolve.hpp"
 #include "../../include/linear_algebra/CSysSolve_b.hpp"
-#include "../../include/omp_structure.hpp"
-#include "../../include/option_structure.hpp"
-#include "../../include/CConfig.hpp"
-#include "../../include/geometry/CGeometry.hpp"
-#include "../../include/linear_algebra/CSysMatrix.hpp"
-#include "../../include/linear_algebra/CMatrixVectorProduct.hpp"
-#include "../../include/linear_algebra/CPreconditioner.hpp"
-
-#include <limits>
-
-const su2double eps = numeric_limits<passivedouble>::epsilon(); /*!< \brief machine epsilon */
 
 template<class ScalarType>
 CSysSolve<ScalarType>::CSysSolve(const bool mesh_deform_mode) : cg_ready(false), bcg_ready(false),

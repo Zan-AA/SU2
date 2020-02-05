@@ -2,7 +2,7 @@
  * \file CFEABoundVariable.hpp
  * \brief Class for defining the variables on the FEA boundaries for FSI applications.
  * \author F. Palacios, T. Economon
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -47,7 +47,7 @@
  * A map is constructed so that variables can be referenced by iPoint instead of iVertex.
  * \ingroup Structural Finite Element Analysis Variables
  * \author R. Sanchez.
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  */
 class CFEABoundVariable final : public CFEAVariable {
 protected:

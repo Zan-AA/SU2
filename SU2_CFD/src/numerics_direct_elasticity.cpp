@@ -2,7 +2,7 @@
  * \file numerics_direct_elasticity.cpp
  * \brief This file contains the routines for setting the tangent matrix and residual of a FEM linear elastic structural problem.
  * \author R. Sanchez
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -35,8 +35,8 @@
  * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../../../include/numerics/elasticity/CFEAElasticity.hpp"
-#include "../../../../Common/include/omp_structure.hpp"
+#include "../include/numerics_structure.hpp"
+#include <limits>
 
 CFEAElasticity::CFEAElasticity(void) : CNumerics () {
 
@@ -375,10 +375,7 @@ void CFEAElasticity::SetElement_Properties(CElement *element, CConfig *config) {
 void CFEAElasticity::ReadDV(CConfig *config) {
 
   int rank = SU2_MPI::GetRank();
-  bool master_node = false;
-  SU2_OMP_MASTER
-  master_node = (rank == MASTER_NODE);
-
+  
   unsigned long index;
 
   string filename;
@@ -409,7 +406,7 @@ void CFEAElasticity::ReadDV(CConfig *config) {
 
   filename = input_name;
 
-  if (master_node) cout << "Filename: " << filename << "." << endl;
+  if (rank == MASTER_NODE) cout << "Filename: " << filename << "." << endl;
 
   properties_file.open(filename.data(), ios::in);
 
@@ -417,7 +414,7 @@ void CFEAElasticity::ReadDV(CConfig *config) {
 
   if (properties_file.fail()) {
 
-    if (master_node)
+    if (rank == MASTER_NODE)
       cout << "There is no design variable file." << endl;
 
     n_DV   = 1;
@@ -430,7 +427,7 @@ void CFEAElasticity::ReadDV(CConfig *config) {
 
     string text_line;
 
-    /*--- First pass: determine number of design variables ---*/
+     /*--- First pass: determine number of design variables ---*/
 
     unsigned short iDV = 0;
 

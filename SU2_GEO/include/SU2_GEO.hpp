@@ -3,7 +3,7 @@
  * \brief Headers of the main subroutines of the code SU2_GEO.
  *        The subroutines and functions are in the <i>SU2_GEO.cpp</i> file.
  * \author F. Palacios, T. Economon
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -45,8 +45,8 @@
 #include <iomanip>
 #include <cmath>
 
-#include "../../Common/include/geometry/CPhysicalGeometry.hpp"
-#include "../../Common/include/CConfig.hpp"
+#include "../../Common/include/geometry_structure.hpp"
+#include "../../Common/include/config_structure.hpp"
 #include "../../Common/include/grid_movement_structure.hpp"
 
 using namespace std;

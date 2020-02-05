@@ -1,36 +1,10 @@
-/*!
- * \file CSU2FileWriter.cpp
- * \brief Filewriter class SU2 native ASCII (CSV) format.
- * \author T. Albring
- * \version 7.0.1 "Blackbird"
- *
- * SU2 Project Website: https://su2code.github.io
- *
- * The SU2 Project is maintained by the SU2 Foundation
- * (http://su2foundation.org)
- *
- * Copyright 2012-2019, SU2 Contributors (cf. AUTHORS.md)
- *
- * SU2 is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * SU2 is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "../../../include/output/filewriter/CSU2FileWriter.hpp"
 
 const string CSU2FileWriter::fileExt = ".csv";
 
-CSU2FileWriter::CSU2FileWriter(string valFileName, CParallelDataSorter *valDataSorter) :
-  CFileWriter(std::move(valFileName), valDataSorter, fileExt){}
+CSU2FileWriter::CSU2FileWriter(vector<string> fields, unsigned short nDim, 
+                               string fileName, CParallelDataSorter *dataSorter) : 
+  CFileWriter(std::move(fields), std::move(fileName), dataSorter, fileExt, nDim){}
 
 
 CSU2FileWriter::~CSU2FileWriter(){
@@ -47,14 +21,13 @@ void CSU2FileWriter::Write_Data(){
   ofstream restart_file;
   
   int iProcessor;
-  const vector<string> fieldNames = dataSorter->GetFieldNames();
-
+  
   /*--- Set a timer for the file writing. ---*/
   
 #ifndef HAVE_MPI
-  startTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
+  StartTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
 #else
-  startTime = MPI_Wtime();
+  StartTime = MPI_Wtime();
 #endif
   
   /*--- Only the master node writes the header. ---*/
@@ -63,9 +36,9 @@ void CSU2FileWriter::Write_Data(){
     restart_file.open(fileName.c_str(), ios::out);
     restart_file.precision(15);
     restart_file << "\"PointID\"";
-    for (iVar = 0; iVar < fieldNames.size()-1; iVar++)
-      restart_file << ",\"" << fieldNames[iVar] << "\"";
-    restart_file << ",\"" << fieldNames[fieldNames.size()-1] << "\"" << endl;
+    for (iVar = 0; iVar < fieldnames.size()-1; iVar++)
+      restart_file << ",\"" << fieldnames[iVar] << "\"";
+    restart_file << ",\"" << fieldnames[fieldnames.size()-1] << "\"" << endl;
     restart_file.close();
   }
   
@@ -95,11 +68,11 @@ void CSU2FileWriter::Write_Data(){
         myPoint++;
         
         /*--- Loop over the variables and write the values to file ---*/
-
-        for (iVar = 0; iVar < fieldNames.size()-1; iVar++) {
+        
+        for (iVar = 0; iVar < fieldnames.size()-1; iVar++) {
           restart_file << scientific << dataSorter->GetData(iVar, iPoint) << ", ";
         }
-        restart_file << scientific << dataSorter->GetData(fieldNames.size()-1, iPoint) << "\n";
+        restart_file << scientific << dataSorter->GetData(fieldnames.size()-1, iPoint) << "\n";        
       }
       
     }
@@ -114,20 +87,20 @@ void CSU2FileWriter::Write_Data(){
   /*--- Compute and store the write time. ---*/
   
 #ifndef HAVE_MPI
-  stopTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
+  StopTime = su2double(clock())/su2double(CLOCKS_PER_SEC);
 #else
-  stopTime = MPI_Wtime();
+  StopTime = MPI_Wtime();
 #endif
-  usedTime = stopTime-startTime;
-
+  UsedTime = StopTime-StartTime;
+  
   /*--- Determine the file size ---*/
-
-  fileSize = Determine_Filesize(fileName);
-
+  
+  file_size = Determine_Filesize(fileName);
+  
   /*--- Compute and store the bandwidth ---*/
-
-  bandwidth = fileSize/(1.0e6)/usedTime;
-
+  
+  Bandwidth = file_size/(1.0e6)/UsedTime;
+  
   /*--- All processors close the file. ---*/
 
   restart_file.close();

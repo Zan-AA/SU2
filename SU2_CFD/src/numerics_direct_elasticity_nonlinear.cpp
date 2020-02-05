@@ -2,7 +2,7 @@
  * \file numerics_direct_elasticity_nonlinear.cpp
  * \brief This file contains the routines for setting the tangent matrix and residual of a FEM nonlinear elastic structural problem.
  * \author R. Sanchez
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -110,8 +110,7 @@ CFEANonlinearElasticity::CFEANonlinearElasticity(unsigned short val_nDim, unsign
   EField_Ref_Unit   = NULL;
   EField_Ref_Mod    = NULL;
   EField_Curr_Unit  = NULL;
-
-  if (maxwell_stress == true) {
+  if (maxwell_stress == true){
 
     su2double *Electric_Field_Dir = config->Get_Electric_Field_Dir();
     unsigned short iVar, iDim;
@@ -124,11 +123,9 @@ CFEANonlinearElasticity::CFEANonlinearElasticity(unsigned short val_nDim, unsign
 
     nDim_Electric_Field = config->GetnDim_Electric_Field();
 
-    if (nDim != nDim_Electric_Field) {
-      SU2_MPI::Error("The electric field dimensions do not agree with the geometry.", CURRENT_FUNCTION);
-    }
+    if (nDim != nDim_Electric_Field) cout << "DIMENSIONS DON'T AGREE (Fix this)" << endl;
 
-    /*--- DV_Val: Vector to store the value of the design variable. ---*/
+     /*--- DV_Val: Vector to store the value of the design variable. ---*/
 
     nElectric_Field = config->GetnElectric_Field();
 
@@ -140,8 +137,8 @@ CFEANonlinearElasticity::CFEANonlinearElasticity(unsigned short val_nDim, unsign
     }
     ref_Efield_mod = sqrt(ref_Efield_mod);
 
-    if (ref_Efield_mod == 0) {
-      SU2_MPI::Error("The electric field has not been defined.", CURRENT_FUNCTION);
+    if (ref_Efield_mod == 0){
+      SU2_MPI::Error("The electric field has not been defined!!!!!", CURRENT_FUNCTION);
     }
 
     /*--- Initialize pointer for the electric field ---*/

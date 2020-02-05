@@ -2,7 +2,7 @@
  * \file geometry_structure.cpp
  * \brief Main subroutines for creating the primal grid and multigrid structure.
  * \author F. Palacios, T. Economon
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -35,25 +35,17 @@
  * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "../../include/geometry/CPhysicalGeometry.hpp"
-#include "../../include/adt_structure.hpp"
-#include "../../include/toolboxes/printing_toolbox.hpp"
-#include "../../include/toolboxes/CLinearPartitioner.hpp"
-#include "../../include/geometry/meshreader/CSU2ASCIIMeshReaderFVM.hpp"
-#include "../../include/geometry/meshreader/CCGNSMeshReaderFVM.hpp"
-#include "../../include/geometry/meshreader/CRectangularMeshReaderFVM.hpp"
-#include "../../include/geometry/meshreader/CBoxMeshReaderFVM.hpp"
-
-#include "../../include/geometry/primal_grid/CPrimalGrid.hpp"
-#include "../../include/geometry/primal_grid/CLine.hpp"
-#include "../../include/geometry/primal_grid/CTriangle.hpp"
-#include "../../include/geometry/primal_grid/CQuadrilateral.hpp"
-#include "../../include/geometry/primal_grid/CTetrahedron.hpp"
-#include "../../include/geometry/primal_grid/CHexahedron.hpp"
-#include "../../include/geometry/primal_grid/CPyramid.hpp"
-#include "../../include/geometry/primal_grid/CPrism.hpp"
-#include "../../include/geometry/primal_grid/CVertexMPI.hpp"
-
+#include "../include/geometry_structure.hpp"
+#include "../include/adt_structure.hpp"
+#include "../include/toolboxes/printing_toolbox.hpp"
+#include "../include/toolboxes/CLinearPartitioner.hpp"
+#include "../include/element_structure.hpp"
+#include "../include/CSU2ASCIIMeshReaderFVM.hpp"
+#include "../include/CCGNSMeshReaderFVM.hpp"
+#include "../include/CRectangularMeshReaderFVM.hpp"
+#include "../include/CBoxMeshReaderFVM.hpp"
+#include "../include/CMultiGridQueue.hpp"
+#include <iomanip>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <iterator>

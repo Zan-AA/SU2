@@ -3,7 +3,7 @@
  * \brief An interface to the INRIA solver PaStiX
  *        (http://pastix.gforge.inria.fr/files/README-txt.html)
  * \author P. Gomes
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -38,10 +38,6 @@
 
 #ifdef HAVE_PASTIX
 
-#include "../../include/mpi_structure.hpp"
-#include "../../include/omp_structure.hpp"
-#include "../../include/CConfig.hpp"
-#include "../../include/geometry/CGeometry.hpp"
 #include "../../include/linear_algebra/CPastixWrapper.hpp"
 #include<numeric>
 
@@ -98,15 +94,6 @@ void CPastixWrapper::Initialize(CGeometry *geometry, CConfig *config) {
   iparm[IPARM_ORDERING]            = API_ORDER_PTSCOTCH;
   iparm[IPARM_INCOMPLETE]          = incomplete;
   iparm[IPARM_LEVEL_OF_FILL]       = pastix_int_t(config->GetPastixFillLvl());
-  iparm[IPARM_THREAD_NBR]          = omp_get_max_threads();
-#ifdef HAVE_MPI
-  int comm_mode = MPI_THREAD_SINGLE;
-  MPI_Query_thread(&comm_mode);
-  if (comm_mode == MPI_THREAD_MULTIPLE)
-    iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_MULTIPLE;
-  else
-    iparm[IPARM_THREAD_COMM_MODE] = API_THREAD_FUNNELED;
-#endif
 
   /*--- Prepare sparsity structure ---*/
 

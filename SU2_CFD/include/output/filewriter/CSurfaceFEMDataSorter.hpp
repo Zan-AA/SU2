@@ -2,14 +2,21 @@
  * \file CSurfaceFEMDataSorter.hpp
  * \brief Headers fo the surface FEM data sorter class.
  * \author T. Albring
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
  * with selected contributions from the open-source community.
  *
- * The SU2 Project is maintained by the SU2 Foundation
- * (http://su2foundation.org)
+ * The main research teams contributing to the current release are:
+ *  - Prof. Juan J. Alonso's group at Stanford University.
+ *  - Prof. Piero Colonna's group at Delft University of Technology.
+ *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *  - Prof. Rafael Palacios' group at Imperial College London.
+ *  - Prof. Vincent Terrapon's group at the University of Liege.
+ *  - Prof. Edwin van der Weide's group at the University of Twente.
+ *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
  *
  * Copyright 2012-2019, Francisco D. Palacios, Thomas D. Economon,
  *                      Tim Albring, and the SU2 contributors.
@@ -33,21 +40,22 @@
 #include "CFEMDataSorter.hpp"
 
 class CSurfaceFEMDataSorter final: public CParallelDataSorter{
-
-  CFEMDataSorter* volumeSorter;                  //!< Pointer to the volume sorter instance
-  vector<unsigned long> globalSurfaceDOFIDs;     //!< Structure to map the local sorted point ID to the global point ID
-  vector<unsigned long> nSurfaceDOFsRanks;       //!< Number of points on each rank
   
+  CFEMDataSorter* volume_sorter;                  //!< Pointer to the volume sorter instance
+   //! Structure to map the local sorted point ID to the global point ID
+  std::vector<unsigned long> globalSurfaceDOFIDs;
+    
 public:
   
   /*!
-   * \brief Construct a file writer using field names and the data sorter.
+   * \brief Constructor
    * \param[in] config - Pointer to the current config structure
    * \param[in] geometry - Pointer to the current geometry
-   * \param[in] valVolumeSorter - The datasorter containing the volume data
+   * \param[in] nFields - Number of output fields
+   * \param[in] volume_sorter - Pointer to the corresponding volume sorter instance
    */
-  CSurfaceFEMDataSorter(CConfig *config, CGeometry *geometry, CFEMDataSorter* valVolumeSorter);
-
+  CSurfaceFEMDataSorter(CConfig *config, CGeometry *geometry, unsigned short nFields, CFEMDataSorter* volume_sorter);
+  
   /*!
    * \brief Destructor
    */
@@ -61,78 +69,30 @@ public:
   void SortOutputData() override;
   
   /*!
-   * \brief Sort the connectivities on the surface into data structures used for output file writing.
-   *  All markers in MARKER_PLOTTING will be sorted.
-   * \param[in] config - Definition of the particular problem.
-   * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] val_sort - boolean controlling whether surface <TRUE> or volume connectivity <FALSE> should be sorted.
-   */
-  void SortConnectivity(CConfig *config, CGeometry *geometry, bool val_sort) override;
-
-  /*!
    * \brief Sort the connectivities (volume and surface) into data structures used for output file writing.
-   * Only markers in the markerList argument will be sorted.
    * \param[in] config - Definition of the particular problem.
    * \param[in] geometry - Geometrical definition of the problem.
-   * \param[in] markerList - List of markers to sort.
+   * \param[in] val_sort - boolean controlling whether the elements are sorted or simply loaded by their owning rank.
    */
-  void SortConnectivity(CConfig *config, CGeometry *geometry, const vector<string> &markerList) override;
-
+  void SortConnectivity(CConfig *config, CGeometry *geometry,  bool val_sort) override;
+  
   /*!
    * \brief Get the global index of a point.
    * \input iPoint - the point ID.
    * \return Global index of a specific point.
    */
-  unsigned long GetGlobalIndex(unsigned long iPoint) const override {
+  unsigned long GetGlobalIndex(unsigned long iPoint) override {
     return globalSurfaceDOFIDs[iPoint];
   }
   
-  /*!
-    * \brief Get the beginning global renumbered node ID of the linear partition owned by a specific processor.
-    * \param[in] rank - the processor rank.
-    * \return The beginning global renumbered node ID.
-    */
-   unsigned long GetNodeBegin(unsigned short rank) const override {
-     unsigned long offsetSurfaceDOFs = 0;
-     for(int i=0; i<rank; ++i) offsetSurfaceDOFs += nSurfaceDOFsRanks[i];
-     return offsetSurfaceDOFs;
-   } 
-
-   /*!
-    * \brief Get the Processor ID a Point belongs to.
-    * \param[in] iPoint - global renumbered ID of the point
-    * \return The rank/processor number.
-    */
-   unsigned short FindProcessor(unsigned long iPoint) const override {
-     unsigned long offsetSurfaceDOFs = nSurfaceDOFsRanks[0];     
-     for (unsigned short iRank = 1; iRank < size; iRank++){
-       if (offsetSurfaceDOFs > iPoint){
-         return iRank - 1;
-       }
-       offsetSurfaceDOFs += nSurfaceDOFsRanks[iRank];
-     }
-     return size-1;
-   }
-   
-   /*!
-    * \brief Get the cumulated number of points
-    * \param[in] rank - the processor rank.
-    * \return The cumulated number of points up to certain processor rank.
-    */
-   unsigned long GetnPointCumulative(unsigned short rank) const override {
-     return GetNodeBegin(rank);
-   }
-   
 private:
   
   /*!
-   * \brief Sort the connectivity for a single surface element type into a linear partitioning across all processors.
+   * \brief Sort the connectivity for a single surface element type into a linear partitioning across all processors (DG-FEM solver).
    * \param[in] config - Definition of the particular problem.
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] Elem_Type - VTK index of the element type being merged.
-   * \param[in] markerList - List of markers to sort
    */
-  void SortSurfaceConnectivity(CConfig *config, CGeometry *geometry, unsigned short Elem_Type,
-                               const vector<string> &markerList);
+  void SortSurfaceConnectivity(CConfig *config, CGeometry *geometry, unsigned short Elem_Type);
 
 };

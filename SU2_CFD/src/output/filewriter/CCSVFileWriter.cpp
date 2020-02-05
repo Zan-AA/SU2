@@ -1,35 +1,9 @@
-/*!
- * \file CCSVFileWriter.cpp
- * \brief CSV Writer output class
- * \author T. Albring
- * \version 7.0.1 "Blackbird"
- *
- * SU2 Project Website: https://su2code.github.io
- *
- * The SU2 Project is maintained by the SU2 Foundation
- * (http://su2foundation.org)
- *
- * Copyright 2012-2019, SU2 Contributors (cf. AUTHORS.md)
- *
- * SU2 is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- *
- * SU2 is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
- */
-
 #include "../../../include/output/filewriter/CCSVFileWriter.hpp"
 #include "../../../include/output/filewriter/CParallelDataSorter.hpp"
 
-CCSVFileWriter::CCSVFileWriter(string valFileName, CParallelDataSorter *valDataSorter) :
-  CFileWriter(std::move(valFileName), valDataSorter, std::move(".csv")){}
+CCSVFileWriter::CCSVFileWriter(vector<string> fields, unsigned short nDim, 
+                               string fileName, CParallelDataSorter *dataSorter) : 
+  CFileWriter(std::move(fields), std::move(fileName), dataSorter, std::move(".csv"), nDim){}
 
 
 CCSVFileWriter::~CCSVFileWriter(){
@@ -53,9 +27,7 @@ void CCSVFileWriter::Write_Data(){
   unsigned long iPoint, index;
   unsigned long Buffer_Send_nVertex[1], *Buffer_Recv_nVertex = NULL;
   unsigned long nLocalVertex_Surface = 0, MaxLocalVertex_Surface = 0;
-
-  const vector<string> fieldNames = dataSorter->GetFieldNames();
-
+    
   ofstream Surf_file;
   Surf_file.precision(15);
   
@@ -78,8 +50,8 @@ void CCSVFileWriter::Write_Data(){
                   MASTER_NODE, MPI_COMM_WORLD);
   
   /*--- Allocate buffers for send/recv of the data and global IDs. ---*/
-
-  su2double *bufD_Send = new su2double[MaxLocalVertex_Surface*fieldNames.size()]();
+  
+  su2double *bufD_Send = new su2double[MaxLocalVertex_Surface*fieldnames.size()]();
   su2double *bufD_Recv = NULL;
   
   unsigned long *bufL_Send = new unsigned long [MaxLocalVertex_Surface]();
@@ -95,8 +67,8 @@ void CCSVFileWriter::Write_Data(){
     bufL_Send[iPoint] = dataSorter->GetGlobalIndex(iPoint);
     
     /*--- Solution data. ---*/
-
-    for (iVar = 0; iVar < fieldNames.size(); iVar++){
+    
+    for (iVar = 0; iVar < fieldnames.size(); iVar++){
       bufD_Send[index] = dataSorter->GetData(iVar, iPoint);
       index++;
     }
@@ -106,15 +78,15 @@ void CCSVFileWriter::Write_Data(){
   /*--- Only the master rank allocates buffers for the recv. ---*/
   
   if (rank == MASTER_NODE) {
-    bufD_Recv = new su2double[nProcessor*MaxLocalVertex_Surface*fieldNames.size()]();
+    bufD_Recv = new su2double[nProcessor*MaxLocalVertex_Surface*fieldnames.size()]();
     bufL_Recv = new unsigned long[nProcessor*MaxLocalVertex_Surface];
   }
   
   /*--- Collective comms of the solution data and global IDs. ---*/
-
-  SU2_MPI::Gather(bufD_Send, (int)MaxLocalVertex_Surface*fieldNames.size(), MPI_DOUBLE,
-                  bufD_Recv, (int)MaxLocalVertex_Surface*fieldNames.size(), MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
-
+  
+  SU2_MPI::Gather(bufD_Send, (int)MaxLocalVertex_Surface*fieldnames.size(), MPI_DOUBLE,
+                  bufD_Recv, (int)MaxLocalVertex_Surface*fieldnames.size(), MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+  
   SU2_MPI::Gather(bufL_Send, (int)MaxLocalVertex_Surface, MPI_UNSIGNED_LONG,
                   bufL_Recv, (int)MaxLocalVertex_Surface, MPI_UNSIGNED_LONG, MASTER_NODE, MPI_COMM_WORLD);
   
@@ -126,11 +98,11 @@ void CCSVFileWriter::Write_Data(){
     
     Surf_file.open(fileName.c_str(), ios::out);
     Surf_file << "\"Point\",";
-    for (iVar = 0; iVar < fieldNames.size()-1; iVar++) {
-      Surf_file << "\"" << fieldNames[iVar] << "\",";
+    for (iVar = 0; iVar < fieldnames.size()-1; iVar++) {
+      Surf_file << "\"" << fieldnames[iVar] << "\",";
     }
-    Surf_file << "\"" << fieldNames[fieldNames.size()-1] << "\"" << endl;
-
+    Surf_file << "\"" << fieldnames[fieldnames.size()-1] << "\"" << endl;
+    
     /*--- Loop through all of the collected data and write each node's values ---*/
     
     for (iProcessor = 0; iProcessor < nProcessor; iProcessor++) {
@@ -145,15 +117,15 @@ void CCSVFileWriter::Write_Data(){
         Surf_file << bufL_Recv[index] << ", ";
         
         /*--- Reset index for solution data access. ---*/
-
-        index  = (iProcessor*MaxLocalVertex_Surface*fieldNames.size() +
-                  iPoint*fieldNames.size());
-
+        
+        index  = (iProcessor*MaxLocalVertex_Surface*fieldnames.size() +
+                  iPoint*fieldnames.size());
+        
         /*--- Write the solution data for each field variable. ---*/
-
-        for (iVar = 0; iVar < fieldNames.size(); iVar++){
+        
+        for (iVar = 0; iVar < fieldnames.size(); iVar++){
           Surf_file << scientific << bufD_Recv[index + iVar];
-          if (iVar != fieldNames.size() -1) Surf_file << ", ";
+          if (iVar != fieldnames.size() -1) Surf_file << ", ";
         }
         Surf_file << endl;
         

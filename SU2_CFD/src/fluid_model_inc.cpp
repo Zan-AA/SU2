@@ -2,7 +2,7 @@
  * fluid_model_inc.cpp
  * \brief Source of the incompressible fluid models.
  * \author T. Economon
- * \version 7.0.1 "Blackbird"
+ * \version 6.0.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>

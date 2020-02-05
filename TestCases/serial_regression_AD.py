@@ -3,7 +3,7 @@
 ## \file serial_regression.py
 #  \brief Python script for automated regression testing of SU2 examples
 #  \author A. Aranake, A. Campos, T. Economon, T. Lukaczyk, S. Padron
-#  \version 7.0.1 "Blackbird"
+#  \version 6.2.0 "Falcon"
 #
 # The current SU2 release has been coordinated by the
 # SU2 International Developers Society <www.su2devsociety.org>
@@ -223,8 +223,8 @@ def main():
     discadj_fea           = TestCase('discadj_fea')
     discadj_fea.cfg_dir   = "disc_adj_fea"
     discadj_fea.cfg_file  = "configAD_fem.cfg" 
-    discadj_fea.test_iter = 4
-    discadj_fea.test_vals = [-2.849531, -3.238474, -3.6413e-04, -8.7087] #last 4 columns
+    discadj_fea.test_iter = 9
+    discadj_fea.test_vals = [-6.319841, -6.375512, -0.000364, -8.708700] #last 4 columns
     discadj_fea.su2_exec  = "SU2_CFD_AD"
     discadj_fea.timeout   = 1600
     discadj_fea.tol       = 0.00001

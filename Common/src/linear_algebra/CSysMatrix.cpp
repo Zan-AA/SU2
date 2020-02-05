@@ -2,7 +2,7 @@
  * \file matrix_structure.cpp
  * \brief Main subroutines for doing the sparse structures
  * \author F. Palacios, A. Bueno, T. Economon
- * \version 7.0.1 "Blackbird"
+ * \version 6.2.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -36,13 +36,6 @@
  */
 
 #include "../../include/linear_algebra/CSysMatrix.inl"
-
-#include "../../include/geometry/CGeometry.hpp"
-#include "../../include/CConfig.hpp"
-#include "../../include/omp_structure.hpp"
-#include "../../include/toolboxes/allocation_toolbox.hpp"
-
-#include <cmath>
 
 template<class ScalarType>
 CSysMatrix<ScalarType>::CSysMatrix(void) {
@@ -195,8 +188,7 @@ void CSysMatrix<ScalarType>::Initialize(unsigned long nPoint, unsigned long nPoi
       index++;
     }
 
-  omp_num_parts = config->GetLinear_Solver_Prec_Threads();
-  if (omp_num_parts == 0) omp_num_parts = num_threads;
+  }
 
   /*--- Set the indices in the in the sparce matrix structure, and memory allocation ---*/
 
@@ -1301,64 +1293,37 @@ template<class ScalarType>
 template<class OtherType>
 void CSysMatrix<ScalarType>::EnforceSolutionAtNode(const unsigned long node_i, const OtherType *x_i, CSysVector<OtherType> & b) {
 
-  /*--- Eliminate the row associated with node i (Block_ii = I and all other Block_ij = 0).
-   *    To preserve eventual symmetry, also attempt to eliminate the column, if the sparse pattern is not
-   *    symmetric the entire column may not be eliminated, the result (matrix and vector) is still correct.
-   *    The vector is updated with the product of column i by the known (enforced) solution at node i. ---*/
+  /*--- Both row and column associated with node i are eliminated (Block_ii = I and all else 0) to preserve eventual symmetry. ---*/
+  /*--- The vector is updated with the product of column i by the known (enforced) solution at node i. ---*/
 
-  for (auto index = row_ptr[node_i]; index < row_ptr[node_i+1]; ++index) {
+  unsigned long iPoint, iVar, jVar, index, mat_begin;
 
-    auto node_j = col_ind[index];
+  /*--- Delete whole row first. ---*/
+  for (index = row_ptr[node_i]*nVar*nVar; index < row_ptr[node_i+1]*nVar*nVar; ++index)
+    matrix[index] = 0.0;
 
-    /*--- The diagonal block is handled outside the loop. ---*/
-    if (node_j == node_i) continue;
+  /*--- Update b with the column product and delete column. ---*/
+  for (iPoint = 0; iPoint < nPoint; ++iPoint) {
+    for (index = row_ptr[iPoint]; index < row_ptr[iPoint+1]; ++index) {
+      if (col_ind[index] == node_i)
+      {
+        mat_begin = index*nVar*nVar;
 
-    /*--- Delete block j on row i (bij) and ATTEMPT to delete block i on row j (bji). ---*/
-    auto bij = &matrix[index*nVar*nVar];
-    auto bji = GetBlock(node_j, node_i);
+        for(iVar = 0; iVar < nVar; ++iVar)
+          for(jVar = 0; jVar < nVar; ++jVar)
+            b[iPoint*nVar+iVar] -= matrix[mat_begin+iVar*nVar+jVar] * x_i[jVar];
 
-    /*--- The "attempt" part. ---*/
-    if (bji == nullptr) {
-      node_j = node_i;
-      bji = bij;
-    }
-
-    for(auto iVar = 0ul; iVar < nVar; ++iVar) {
-      for(auto jVar = 0ul; jVar < nVar; ++jVar) {
-        /*--- Column product. ---*/
-        b[node_j*nVar+iVar] -= bji[iVar*nVar+jVar] * x_i[jVar];
-        /*--- Delete blocks. ---*/
-        bij[iVar*nVar+jVar] = bji[iVar*nVar+jVar] = 0.0;
+        /*--- If on diagonal, set diagonal of block to 1, else delete block. ---*/
+        if (iPoint == node_i)
+          for (iVar = 0; iVar < nVar; ++iVar) matrix[mat_begin+iVar*(nVar+1)] = 1.0;
+        else
+          for (iVar = 0; iVar < nVar*nVar; iVar++) matrix[mat_begin+iVar] = 0.0;
       }
     }
-
   }
-
-  /*--- Set the diagonal block to the identity. ---*/
-  SetVal2Diag(node_i, 1.0);
 
   /*--- Set know solution in rhs vector. ---*/
-  b.SetBlock(node_i, x_i);
-
-}
-
-template<class ScalarType>
-template<class OtherType>
-void CSysMatrix<ScalarType>::MatrixMatrixAddition(OtherType alpha, const CSysMatrix<OtherType>& B) {
-
-  /*--- Check that the sparse structure is shared between the two matrices,
-   *    comparing pointers is ok as they are obtained from CGeometry. ---*/
-  bool ok = (row_ptr == B.row_ptr) && (col_ind == B.col_ind) &&
-            (nVar == B.nVar) && (nEqn == B.nEqn) && (nnz == B.nnz);
-
-  if (!ok) {
-    SU2_OMP_MASTER
-    SU2_MPI::Error("Matrices do not have compatible sparsity.", CURRENT_FUNCTION);
-  }
-
-  SU2_OMP_FOR_STAT(omp_light_size)
-  for (auto i = 0ul; i < nnz*nVar*nEqn; ++i)
-    matrix[i] += PassiveAssign<ScalarType,OtherType>(alpha*B.matrix[i]);
+  for (iVar = 0; iVar < nVar; iVar++) b[node_i*nVar+iVar] = x_i[iVar];
 
 }
 

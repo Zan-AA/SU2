@@ -3,14 +3,21 @@
  * \brief Headers of the main subroutines for generating the file outputs.
  *        The subroutines and functions are in the <i>output_structure.cpp</i> file.
  * \author F. Palacios, T. Economon, M. Colonno
- * \version 7.0.1 "Blackbird"
+ * \version 6.1.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
  * with selected contributions from the open-source community.
  *
- * The SU2 Project is maintained by the SU2 Foundation
- * (http://su2foundation.org)
+ * The main research teams contributing to the current release are:
+ *  - Prof. Juan J. Alonso's group at Stanford University.
+ *  - Prof. Piero Colonna's group at Delft University of Technology.
+ *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *  - Prof. Rafael Palacios' group at Imperial College London.
+ *  - Prof. Vincent Terrapon's group at the University of Liege.
+ *  - Prof. Edwin van der Weide's group at the University of Twente.
+ *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
  *
  * Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
  *                      Tim Albring, and the SU2 contributors.
@@ -44,6 +51,12 @@
 #include <time.h>
 #include <fstream>
 #include <vector>
+
+//#include "../solver_structure.hpp"
+//#include "../integration_structure.hpp"
+//#include "../../../Common/include/geometry_structure.hpp"
+//#include "../../../Common/include/fem_geometry_structure.hpp"
+//#include "../../../Common/include/fem_standard_element.hpp"
 
 #include "../../../Common/include/option_structure.hpp"
 class CGeometry;

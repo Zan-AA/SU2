@@ -3,7 +3,7 @@
 ## \file Compute_polar.py
 #  \brief Python script for performing polar sweep.
 #  \author E Arad (based on T. Lukaczyk and  F. Palacios script)
-#  \version 7.0.1 "Blackbird"
+#  \version 6.2.0 "Falcon"
 #
 # The current SU2 release has been coordinated by the
 # SU2 International Developers Society <www.su2devsociety.org>
